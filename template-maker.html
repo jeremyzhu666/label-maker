@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>模板图片生成器 · 蓝牙直打版</title>
+<title>标签模板生成器 · 直接打印版</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     --bg:#f4f6fa; --card:#fff; --border:#e2e6ee; --text:#1a2233;
     --dim:#6b7488; --accent:#2563eb; --accent-2:#1e40af; --ok:#16a34a;
     --warn:#ca8a04; --danger:#dc2626;
-    --radius:12px;
+    --radius:12px; --btn-h:46px;
     /* --font-sans:只给 canvas 打印标签用(英文 Barlow Condensed 高级感 + 中文正经 fallback) */
     --font-sans:'Barlow Condensed','PingFang SC','Hiragino Sans GB','Microsoft YaHei','SimHei','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     /* --font-ui:网页 UI 专用纯中文字体栈,不加 Barlow Condensed,避免英文字体 fallback 度量导致中文"怪" */
@@ -29,9 +29,10 @@
   .step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex-shrink:0;letter-spacing:.5px}
   .step-head h2{font-size:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
   .step-head .tip{margin-left:auto;font-size:11px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .block-group{border:1px solid var(--border);border-radius:9px;padding:10px;background:#fafbfc}
-  .block-group .bg-label{font-size:10px;color:var(--dim);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .block-group{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fff;box-shadow:0 2px 8px rgba(20,30,60,.04)}
+  .block-group input + input{margin-top:10px}
+  .block-group .title-input{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-color:#e0e7f1}
   label{display:block;font-size:11px;color:var(--dim);margin:8px 0 4px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
   input[type=text],input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font-ui);font-weight:500;color:var(--text);background:#fff;transition:.15s;letter-spacing:.2px;-moz-appearance:textfield}
   input[type=text]:focus,input[type=number]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
@@ -41,17 +42,17 @@
   .title-input{font-weight:700}
   .lock-note{font-size:10px;color:var(--ok);margin-top:4px;display:flex;align-items:center;gap:3px;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
   .preview-wrap{display:flex;justify-content:center}
-  canvas{width:100%;max-width:400px;height:auto;border:1px solid var(--border);border-radius:6px;background:#fff;image-rendering:auto;box-shadow:0 1px 2px rgba(10,20,40,.05)}
+  canvas{width:100%;max-width:200px;height:auto;border:1px solid var(--border);border-radius:6px;background:#fff;image-rendering:auto;box-shadow:0 1px 2px rgba(10,20,40,.05)}
   .preview-meta{text-align:center;font-size:10px;color:var(--dim);margin-top:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
   .actions{display:flex;gap:10px;flex-wrap:wrap}
-  button{flex:1;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font-ui);letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:.15s}
+  button{flex:1;height:var(--btn-h);padding:0 16px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font-ui);letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:.15s;line-height:1.05}
   button:disabled{opacity:.5;cursor:not-allowed!important}
   .btn-export{background:var(--accent);color:#fff}
   .btn-export:active{background:var(--accent-2)}
   .btn-print{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
   .btn-print:active{background:#15803d}
-  .btn-reset{flex:0 0 90px;background:#fff;border:1px solid var(--border);color:var(--dim);font-weight:700}
-  .btn-connect{width:100%;padding:12px;border-radius:10px;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#fff;background:var(--accent);transition:.15s}
+  .btn-reset{flex:0 0 96px;background:#fff;border:1px solid var(--border);color:var(--dim);font-weight:700}
+  .btn-connect{width:100%;height:var(--btn-h);padding:0 18px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:1.3px;text-transform:uppercase;color:#fff;background:var(--accent);transition:.15s;line-height:1.05}
   .btn-connect:active{background:var(--accent-2)}
   .print-box{margin-top:12px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
   .print-box.connected{background:#f0fdf4;border-color:#bbf7d0}
@@ -81,14 +82,13 @@
 <body>
   <header>
     <h1>LABEL TEMPLATE MAKER</h1>
-    <p>800 × 600 HD · 四宫格模板 · 300dpi 打印清晰 · 导出 JPG / 蓝牙直打 Niimbot</p>
+    <p>800 × 600 HD · 四宫格模板 · 300dpi 打印清晰 · 导出 JPG / 直接打印 Niimbot</p>
   </header>
 
   <!-- 1 输入 -->
   <section class="step">
     <div class="step-head">
-      <span class="step-num">01</span><h2>输入内容</h2>
-      <span class="tip">第一行自动记忆 · 四宫格</span>
+      <span class="step-num">01</span><h2>标签编辑</h2>
     </div>
     <div class="grid" id="inputGrid"></div>
   </section>
@@ -96,7 +96,7 @@
   <!-- 2 预览 -->
   <section class="step">
     <div class="step-head">
-      <span class="step-num">02</span><h2>预览</h2>
+      <span class="step-num">02</span><h2>标签预览</h2>
       <span class="tip">4:3 HD · 等比缩放到 300dpi 标签</span>
     </div>
     <div class="preview-wrap">
@@ -108,7 +108,7 @@
   <!-- 3 导出 / 打印 -->
   <section class="step">
     <div class="step-head">
-      <span class="step-num">03</span><h2>导出 / 打印</h2>
+      <span class="step-num">03</span><h2>标签打印</h2>
     </div>
 
     <div class="print-box" id="printBox">
@@ -119,7 +119,7 @@
           <div class="status-sub" id="statusSub"></div>
         </div>
       </div>
-      <button class="btn-connect" id="btnConnect" disabled>连接精臣打印机 · CONNECT BT</button>
+      <button class="btn-connect" id="btnConnect" disabled>连接打印机</button>
 
       <div class="select-row" style="margin-top:12px" id="printSelects" hidden>
         <div>
@@ -161,18 +161,19 @@
     </div>
 
     <div class="actions" style="margin-top:14px">
-      <button class="btn-export" id="exportBtn">⬇ 下载 JPG · EXPORT</button>
-      <button class="btn-print" id="printBtn" disabled>🖨 蓝牙打印 · PRINT</button>
+      <button class="btn-export" id="exportBtn">下载 JPG</button>
+      <button class="btn-print" id="printBtn" disabled>直接打印</button>
       <button class="btn-reset" id="clearBtn">清空 RESET</button>
     </div>
   </section>
 
-  <footer>Supports Niimbot · B1 / B1 Pro / B2 Pro / M2-H / D11_H / D110 / N1 · Web Bluetooth v2.4</footer>
+  <footer>v1.0.0 · Supports Niimbot · B1 / B1 Pro / B2 Pro / M2-H / D11_H / D110 / N1 · Web Bluetooth v2.4</footer>
   <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   'use strict';
+  const APP_VERSION = '1.0.0';
   const W=800, H=600, BW=W/2, BH=H/2;
   // Condensed 字体 + 正经系统中文字体 fallback(热敏打印笔画不粘连):
   // - 字号保持 44 / 68;字重再-2级(每档-100,共减200):标题 600→400,内容 500→300
@@ -194,7 +195,7 @@
     if(/位置|库位|存放|仓位|货架|location|rack|shelf/i.test(t)) return 'A-03-02';
     if(/备注|说明|note|remark|comment|memo/i.test(t)) return 'Notes';
     if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return 'User';
-    return 'Enter content';
+    return '编辑模板';
   }
   function loadTitles(){
     try{ const s=JSON.parse(localStorage.getItem(STORE_KEY)); if(Array.isArray(s)&&s.length===4) return s; }catch(e){}
@@ -216,12 +217,10 @@
     for(let i=0;i<4;i++){
       const g = document.createElement('div');
       g.className = 'block-group';
+      const idx = String(i+1).padStart(2,'0');
+      g.setAttribute('data-idx', idx);
       g.innerHTML =
-        '<div class="bg-label">第 '+(i+1)+' 块 · BLOCK '+(i+1)+'</div>'+
-        '<label>第一行(固定)</label>'+
-        '<input type="text" class="title-input" data-type="t" data-i="'+i+'" value="'+escapeAttr(titles[i])+'">'+
-        '<div class="lock-note">🔒 模板项 · 自动记忆</div>'+
-        '<label>第二行(输入)</label>'+
+        '<input type="text" class="title-input" data-type="t" data-i="'+i+'" value="'+escapeAttr(titles[i])+'" placeholder="模板标题">'+
         '<input type="text" data-type="c" data-i="'+i+'" placeholder="'+escapeAttr(smartPlaceholder(titles[i]))+'" value="'+escapeAttr(contents[i])+'">';
       grid.appendChild(g);
     }
@@ -477,7 +476,7 @@
     }
     setStatus('ready', '未连接打印机', '先选择型号和标签纸,再点下方按钮配对你的精臣打印机');
     btnConnect.disabled = false;
-    btnConnect.textContent = '① 连接 & 识别打印机';
+    btnConnect.textContent = '连接打印机';
     printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
     populateModels();
     populateLabelsForModel(DEFAULT_MODEL);
@@ -490,7 +489,7 @@
     const modelHint = getCurrentModel();
     btnConnect.disabled = true;
     try{
-      showToast('正在弹出蓝牙配对列表...');
+      showToast('正在弹出设备连接列表...');
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
       const allPrefixes = [...new Set(Object.values(REGISTRY.models).flatMap(m => m.name_prefixes || []))];
       const info = await BT.identify({ ...modelHint, name_prefixes: allPrefixes });
@@ -512,7 +511,7 @@
       showToast('连接成功,可以打印');
     }catch(err){
       console.error(err);
-      const msg = err && err.message ? err.message : '连接失败(用户可能取消了蓝牙选择)';
+      const msg = err && err.message ? err.message : '连接失败(可能取消了设备选择)';
       setStatus('no', '连接失败', msg);
       btnConnect.textContent = '重新连接';
       showToast(msg, true);
@@ -525,7 +524,7 @@
     try{ if(BT) await BT.disconnect(); }catch(e){}
     isConnected = false;
     lastIdentifyInfo = null;
-    btnConnect.textContent = '① 连接 & 识别打印机';
+    btnConnect.textContent = '连接打印机';
     btnConnect.removeEventListener('click', onDisconnect);
     btnConnect.addEventListener('click', onConnect, { once:true });
     btnPrint.disabled = true;
@@ -597,7 +596,7 @@
       // 真实打印进度
       const onProgress = (msg) => {
         const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中...');
-        setStatus('ok', '🖨 打印中…', text);
+        setStatus('ok', '打印中…', text);
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
       setStatus('ok', `✅ 打印完成 (${copies}份 × ${size.label})`, lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : '');
