@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模板图片生成器 · 蓝牙直打版</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/niimbot-web-bluetooth@2.4.0/src/niimbot.js"></script>
+<style>
+  :root{
+    --bg:#f4f6fa; --card:#fff; --border:#e2e6ee; --text:#1a2233;
+    --dim:#6b7488; --accent:#2563eb; --accent-2:#1e40af; --ok:#16a34a;
+    --warn:#ca8a04; --danger:#dc2626;
+    --radius:12px;
+    /* --font-sans:只给 canvas 打印标签用(英文 Barlow Condensed 高级感 + 中文正经 fallback) */
+    --font-sans:'Barlow Condensed','PingFang SC','Hiragino Sans GB','Microsoft YaHei','SimHei','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    /* --font-ui:网页 UI 专用纯中文字体栈,不加 Barlow Condensed,避免英文字体 fallback 度量导致中文"怪" */
+    --font-ui:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','SimHei','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:var(--font-ui);font-weight:500;background:var(--bg);color:var(--text);line-height:1.45;padding:16px;max-width:720px;margin:0 auto;letter-spacing:.1px}
+  header{text-align:center;margin:4px 0 18px}
+  header h1{font-size:26px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  header p{font-size:12px;color:var(--dim);margin-top:4px;letter-spacing:.3px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(20,30,60,.04)}
+  .step-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex-shrink:0;letter-spacing:.5px}
+  .step-head h2{font-size:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+  .step-head .tip{margin-left:auto;font-size:11px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .block-group{border:1px solid var(--border);border-radius:9px;padding:10px;background:#fafbfc}
+  .block-group .bg-label{font-size:10px;color:var(--dim);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px}
+  label{display:block;font-size:11px;color:var(--dim);margin:8px 0 4px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+  input[type=text],input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font-ui);font-weight:500;color:var(--text);background:#fff;transition:.15s;letter-spacing:.2px;-moz-appearance:textfield}
+  input[type=text]:focus,input[type=number]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  /* Chrome/Safari/Edge 干掉数字输入框的上下箭头按钮(和 select 高度对齐更统一) */
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  select{cursor:pointer}
+  .title-input{font-weight:700}
+  .lock-note{font-size:10px;color:var(--ok);margin-top:4px;display:flex;align-items:center;gap:3px;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
+  .preview-wrap{display:flex;justify-content:center}
+  canvas{width:100%;max-width:400px;height:auto;border:1px solid var(--border);border-radius:6px;background:#fff;image-rendering:auto;box-shadow:0 1px 2px rgba(10,20,40,.05)}
+  .preview-meta{text-align:center;font-size:10px;color:var(--dim);margin-top:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  button{flex:1;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:var(--font-ui);letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:.15s}
+  button:disabled{opacity:.5;cursor:not-allowed!important}
+  .btn-export{background:var(--accent);color:#fff}
+  .btn-export:active{background:var(--accent-2)}
+  .btn-print{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+  .btn-print:active{background:#15803d}
+  .btn-reset{flex:0 0 90px;background:#fff;border:1px solid var(--border);color:var(--dim);font-weight:700}
+  .btn-connect{width:100%;padding:12px;border-radius:10px;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#fff;background:var(--accent);transition:.15s}
+  .btn-connect:active{background:var(--accent-2)}
+  .print-box{margin-top:12px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
+  .print-box.connected{background:#f0fdf4;border-color:#bbf7d0}
+  .status-line{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;font-weight:700;letter-spacing:.4px}
+  .status-dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex-shrink:0}
+  .status-dot.ready{background:var(--warn)}
+  .status-dot.ok{background:var(--ok);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
+  .status-dot.no{background:var(--danger)}
+  .status-text{flex:1;line-height:1.35}
+  .status-sub{font-size:11px;color:var(--dim);font-weight:500;margin-top:3px;letter-spacing:.3px;text-transform:none}
+  .select-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .select-row select{font-size:13px;font-weight:500;letter-spacing:.2px;text-transform:none}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#1a2233;color:#fff;padding:11px 22px;border-radius:10px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99;max-width:85%;text-align:center;font-weight:600;letter-spacing:.4px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:#7f1d1d;letter-spacing:.3px}
+  footer{text-align:center;font-size:10px;color:var(--dim);margin-top:8px;padding:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+
+  @media (max-width:520px){
+    body{padding:12px}
+    .grid{grid-template-columns:1fr}
+    header h1{font-size:22px;letter-spacing:.8px}
+    .select-row{grid-template-columns:1fr}
+    button{padding:12px;font-size:13px;letter-spacing:1px}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>LABEL TEMPLATE MAKER</h1>
+    <p>800 × 600 HD · 四宫格模板 · 300dpi 打印清晰 · 导出 JPG / 蓝牙直打 Niimbot</p>
+  </header>
+
+  <!-- 1 输入 -->
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">01</span><h2>输入内容</h2>
+      <span class="tip">第一行自动记忆 · 四宫格</span>
+    </div>
+    <div class="grid" id="inputGrid"></div>
+  </section>
+
+  <!-- 2 预览 -->
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">02</span><h2>预览</h2>
+      <span class="tip">4:3 HD · 等比缩放到 300dpi 标签</span>
+    </div>
+    <div class="preview-wrap">
+      <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+    <div class="preview-meta">CANVAS · 800 × 600 HD · PRINT 300dpi READY · EXPORT 4K JPG</div>
+  </section>
+
+  <!-- 3 导出 / 打印 -->
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">03</span><h2>导出 / 打印</h2>
+    </div>
+
+    <div class="print-box" id="printBox">
+      <div class="status-line">
+        <span class="status-dot" id="statusDot"></span>
+        <div class="status-text" id="statusText">
+          正在检测浏览器 Web Bluetooth 支持
+          <div class="status-sub" id="statusSub"></div>
+        </div>
+      </div>
+      <button class="btn-connect" id="btnConnect" disabled>连接精臣打印机 · CONNECT BT</button>
+
+      <div class="select-row" style="margin-top:12px" id="printSelects" hidden>
+        <div>
+          <label>打印机型号 MODEL</label>
+          <select id="selModel"></select>
+        </div>
+        <div>
+          <label>标签尺寸 LABEL SIZE</label>
+          <select id="selLabel"></select>
+        </div>
+        <div>
+          <label>填充模式 FIT MODE</label>
+          <select id="selFit">
+            <option value="contain">等比缩放居中(推荐)</option>
+            <option value="cover">等比裁剪填满</option>
+            <option value="stretch">拉伸填满</option>
+          </select>
+        </div>
+        <div>
+          <label>打印浓度 DENSITY</label>
+          <select id="selDensity">
+            <option value="1">1 · 淡</option>
+            <option value="2">2</option>
+            <option value="3" selected>3 · 默认</option>
+            <option value="4">4</option>
+            <option value="5">5 · 深</option>
+          </select>
+        </div>
+        <div>
+          <label>份数 COPIES</label>
+          <input id="copies" type="number" min="1" max="99" value="1">
+        </div>
+        <div>
+          <label>左右偏移 OFFSET X (px · -99~+99)</label>
+          <input id="selOffsetX" type="number" min="-99" max="99" step="1" value="0">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions" style="margin-top:14px">
+      <button class="btn-export" id="exportBtn">⬇ 下载 JPG · EXPORT</button>
+      <button class="btn-print" id="printBtn" disabled>🖨 蓝牙打印 · PRINT</button>
+      <button class="btn-reset" id="clearBtn">清空 RESET</button>
+    </div>
+  </section>
+
+  <footer>Supports Niimbot · B1 / B1 Pro / B2 Pro / M2-H / D11_H / D110 / N1 · Web Bluetooth v2.4</footer>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  const W=800, H=600, BW=W/2, BH=H/2;
+  // Condensed 字体 + 正经系统中文字体 fallback(热敏打印笔画不粘连):
+  // - 字号保持 44 / 68;字重再-2级(每档-100,共减200):标题 600→400,内容 500→300
+  //   中文用系统自带 PingFang SC(苹方,Light/Regular 字重精确) + 雅黑/黑体兜底,笔画扎实,不会像 Noto 那样"怪"
+  // - 缩字兜底下限:标题≥22,内容≥34;步长-4
+  const FONT_UI_TITLE   = '400 44px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
+  const FONT_UI_CONTENT = '300 68px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
+  const STORE_KEY='tpl_titles_v3';
+  const defaultTitles=['名称','编号','日期','备注'];
+  // 根据第一行模板项智能生成第二行 placeholder
+  function smartPlaceholder(title){
+    const t = (title||'').trim();
+    if(/日期|时间|生产日期|采购日期|入库日期|打印日期|update|date|time/i.test(t)) return 'YYMMDD';
+    if(/编号|编码|编码号|型号|料号|序号|代码|sku|sn|code|no|编号/i.test(t)) return 'A01';
+    if(/名称|品名|物品名|品名规格|物品|product|item|name/i.test(t)) return 'Apple';
+    if(/规格|尺寸|大小|spec|size/i.test(t)) return '50×30mm';
+    if(/数量|个数|件数|qty/i.test(t)) return '120';
+    if(/价格|单价|金额|售价|price|cost/i.test(t)) return '¥299';
+    if(/位置|库位|存放|仓位|货架|location|rack|shelf/i.test(t)) return 'A-03-02';
+    if(/备注|说明|note|remark|comment|memo/i.test(t)) return '其他说明';
+    if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return '张工';
+    return '输入内容';
+  }
+  function loadTitles(){
+    try{ const s=JSON.parse(localStorage.getItem(STORE_KEY)); if(Array.isArray(s)&&s.length===4) return s; }catch(e){}
+    return defaultTitles.slice();
+  }
+  function saveTitles(){ localStorage.setItem(STORE_KEY, JSON.stringify(titles)); }
+  function escapeAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+  let titles = loadTitles();
+  let contents = ['','','',''];
+
+  const grid = document.getElementById('inputGrid');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const toastEl = document.getElementById('toast');
+
+  /* ============ 输入 & 绘制 ============ */
+  function buildInputs(){
+    grid.innerHTML = '';
+    for(let i=0;i<4;i++){
+      const g = document.createElement('div');
+      g.className = 'block-group';
+      g.innerHTML =
+        '<div class="bg-label">第 '+(i+1)+' 块 · BLOCK '+(i+1)+'</div>'+
+        '<label>第一行(固定)</label>'+
+        '<input type="text" class="title-input" data-type="t" data-i="'+i+'" value="'+escapeAttr(titles[i])+'">'+
+        '<div class="lock-note">🔒 模板项 · 自动记忆</div>'+
+        '<label>第二行(输入)</label>'+
+        '<input type="text" data-type="c" data-i="'+i+'" placeholder="'+escapeAttr(smartPlaceholder(titles[i]))+'" value="'+escapeAttr(contents[i])+'">';
+      grid.appendChild(g);
+    }
+    grid.querySelectorAll('input').forEach(inp=>{ inp.addEventListener('input', onInput); });
+  }
+  function onInput(e){
+    const i = +e.target.dataset.i;
+    if(e.target.dataset.type==='t'){
+      titles[i] = e.target.value;
+      saveTitles();
+      // 标题变化 → 同步更新同格的第二行 placeholder
+      const peer = grid.querySelector('input[data-type="c"][data-i="'+i+'"]');
+      if(peer){ peer.placeholder = smartPlaceholder(titles[i]); }
+    }
+    else{ contents[i] = e.target.value; }
+    draw();
+  }
+  function draw(official){
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,W,H);
+    for(let i=0;i<4;i++){
+      const col = i%2, row = Math.floor(i/2);
+      const x = col*BW, y = row*BH;
+      // 标题文本:左右内边距 34px,基线在 y+54 (=108/2,保留原行高保证视觉垂直位置不变)
+      ctx.fillStyle='#000000';
+      ctx.font = FONT_UI_TITLE;
+      ctx.textBaseline='middle'; ctx.textAlign='left';
+      drawTextClip(titles[i]||'', x+34, y+54, BW-68, true);
+      // 内容区:中心 y+108+96=y+204,左右内边距 29px
+      // 预览(official=false)空内容画灰色占位提示;正式导出/打印(official=true)时空内容留白,不要把提示字打出来
+      const hasContent = !!String(contents[i]||'').trim();
+      let contentText = '';
+      if(hasContent){
+        ctx.fillStyle = '#000000';
+        contentText = contents[i];
+      } else if(!official){
+        ctx.fillStyle = '#9aa1b4';
+        contentText = smartPlaceholder(titles[i]);
+      } else {
+        ctx.fillStyle = '#000000';
+        contentText = '';
+      }
+      ctx.font = FONT_UI_CONTENT;
+      ctx.textAlign='center';
+      drawTextClip(contentText||'', x+BW/2, y+204, BW-58, false);
+    }
+  }
+  function drawTextClip(text, x, y, maxW, isTitle){
+    let t=String(text);
+    if(!t){ return; }
+    let w = ctx.measureText(t).width;
+    if(w<=maxW){ ctx.fillText(t, x, y); return; }
+    const baseFont = ctx.font;
+    const m = baseFont.match(/^(\d+)\s*px/);
+    if(m){
+      let size = +m[1];
+      // 兜底下限随 +20% 同步抬升,再配合字重变细,打印时不会先缩成小字再糊
+      const minSize = isTitle ? 22 : 34;
+      // 步长-4(字号大了,收敛更快)
+      while(size > minSize && ctx.measureText(t).width > maxW){
+        size -= 4;
+        ctx.font = baseFont.replace(/\d+\s*px/, size+'px');
+      }
+      if(ctx.measureText(t).width <= maxW){ ctx.fillText(t, x, y); }
+      else {
+        while(t.length > 1 && ctx.measureText(t+'…').width > maxW){ t = t.slice(0, -1); }
+        ctx.fillText(t+'…', x, y);
+      }
+      ctx.font = baseFont;
+    }
+  }
+  function exportJPG(){
+    draw(true);
+    canvas.toBlob(function(blob){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'template_'+Date.now()+'.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+      showToast('已导出 JPG');
+    }, 'image/jpeg', 0.95);
+  }
+  function clearContents(){
+    contents = ['','','',''];
+    buildInputs();
+    draw();
+    showToast('已清空输入');
+  }
+  let toastTimer;
+  function showToast(msg, err){
+    toastEl.textContent = msg;
+    toastEl.classList.toggle('err', !!err);
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2500);
+  }
+
+  // --- 蓝牙状态 ---
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const statusSub = document.getElementById('statusSub');
+  const btnConnect = document.getElementById('btnConnect');
+  const btnPrint = document.getElementById('printBtn');
+  const selModel = document.getElementById('selModel');
+  const selLabel = document.getElementById('selLabel');
+  const selFit = document.getElementById('selFit');
+  const selDensity = document.getElementById('selDensity');
+  const printSelects = document.getElementById('printSelects');
+  const copiesInp = document.getElementById('copies');
+  const selOffsetX = document.getElementById('selOffsetX');
+  const printBox = document.getElementById('printBox');
+
+  const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
+  let isConnected = false;
+  let lastIdentifyInfo = null;
+
+  /* ---------- registry: niimbot-web-bluetooth@2.4.0 registry.json ----------
+     model 必须带 id/dpi/task/protocol,size 必须带 w_px/h_px/dpi/code,
+     驱动内部靠这些字段拼 BLE 包,缺一不可。                                */
+  const REGISTRY = {
+    models: {
+      b1pro: { key:'b1pro', label:'B1 Pro',       id:4097, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B1'] },
+      b2pro: { key:'b2pro', label:'B2 Pro',       id:6912, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B2'] },
+      b1:    { key:'b1',    label:'B1 (203 dpi)', id:4096, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['B1'] },
+      d11h:  { key:'d11h',  label:'D11_H',        id:528,  dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['D11'] },
+      m2h:   { key:'m2h',   label:'M2-H',         id:4608, dpi:300, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['M2'] },
+      d110:  { key:'d110',  label:'D110',         id:2304, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['D110'] },
+      n1:    { key:'n1',    label:'N1',           id:3586, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['N1'] },
+    },
+    /* size.key 格式: T{W}x{H}[_modelSuffix]。
+       w_px = 打印头方向(横向),h_px = 走纸方向(纵向)。
+       每个 model 只显示自己 dpi 匹配的尺寸(用户选错 dpi 边缘会被截断)。 */
+    sizes: {
+      /* ====== 300 dpi: B1 Pro / B2 Pro / M2-H / D11_H ====== */
+      T15x30_300:  { key:'T15x30_300',  label:'15 × 30 mm',       code:'T15*30',  w_mm:15, h_mm:30, w_px:177, h_px:354, margin:6,  dpi:300 },
+      T20x40_300:  { key:'T20x40_300',  label:'20 × 40 mm',       code:'T20*40',  w_mm:20, h_mm:40, w_px:236, h_px:472, margin:8,  dpi:300 },
+      T25x25_300:  { key:'T25x25_300',  label:'25 × 25 mm (方)',  code:'T25*25',  w_mm:25, h_mm:25, w_px:295, h_px:295, margin:8,  dpi:300 },
+      T25x38_300:  { key:'T25x38_300',  label:'25 × 38 mm (线缆旗)',code:'T25*38+40',w_mm:25,h_mm:38,w_px:295,h_px:449,margin:10,dpi:300 },
+      T30x20_300:  { key:'T30x20_300',  label:'30 × 20 mm (横)',  code:'T30*20',  w_mm:30, h_mm:20, w_px:354, h_px:236, margin:10, dpi:300 },
+      T30x30_300:  { key:'T30x30_300',  label:'30 × 30 mm',       code:'T30*30',  w_mm:30, h_mm:30, w_px:354, h_px:354, margin:10, dpi:300 },
+      T30x45_300:  { key:'T30x45_300',  label:'30 × 45 mm (线缆旗)',code:'T30*45+50',w_mm:30,h_mm:45,w_px:354,h_px:531,margin:10,dpi:300 },
+      T40x20_300:  { key:'T40x20_300',  label:'40 × 20 mm (横)',  code:'T40*20',  w_mm:40, h_mm:20, w_px:472, h_px:236, margin:10, dpi:300 },
+      T40x30_300:  { key:'T40x30_300',  label:'40 × 30 mm (横)',  code:'T40*30',  w_mm:40, h_mm:30, w_px:472, h_px:354, margin:10, dpi:300 },
+      T40x60_300:  { key:'T40x60_300',  label:'40 × 60 mm (大)',  code:'T40*60',  w_mm:40, h_mm:60, w_px:472, h_px:709, margin:10, dpi:300 },
+      T50x30_300:  { key:'T50x30_300',  label:'50 × 30 mm (大横)',code:'T50*30',  w_mm:50, h_mm:30, w_px:584, h_px:354, margin:10, dpi:300 },
+      T50x50_300:  { key:'T50x50_300',  label:'50 × 50 mm (大方)',code:'T50*50',  w_mm:50, h_mm:50, w_px:584, h_px:591, margin:10, dpi:300 },
+      T50x80_300:  { key:'T50x80_300',  label:'50 × 80 mm (竖大)',code:'T50*80',  w_mm:50, h_mm:80, w_px:584, h_px:945, margin:10, dpi:300 },
+      T60x40_300:  { key:'T60x40_300',  label:'60 × 40 mm',       code:'T60*40',  w_mm:60, h_mm:40, w_px:709, h_px:472, margin:10, dpi:300 },
+
+      /* ====== 203 dpi: B1 / D110 / N1 ====== */
+      T14x50_203:  { key:'T14x50_203',  label:'14 × 50 mm (经典条)',code:'T14*50', w_mm:14, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-1 },
+      T15x30_203:  { key:'T15x30_203',  label:'15 × 30 mm',       code:'T15*30',  w_mm:15, h_mm:30, w_px:120, h_px:240, margin:6,  dpi:203 },
+      T15x50_203:  { key:'T15x50_203',  label:'15 × 50 mm (小条)',code:'T15*50',  w_mm:15, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-2 },
+      T20x20_203:  { key:'T20x20_203',  label:'20 × 20 mm (方)',  code:'T20*20',  w_mm:20, h_mm:20, w_px:160, h_px:160, margin:8,  dpi:203 },
+      T25x25_203:  { key:'T25x25_203',  label:'25 × 25 mm (方)',  code:'T25*25',  w_mm:25, h_mm:25, w_px:200, h_px:200, margin:8,  dpi:203 },
+      T30x20_203:  { key:'T30x20_203',  label:'30 × 20 mm (横)',  code:'T30*20',  w_mm:30, h_mm:20, w_px:240, h_px:160, margin:10, dpi:203 },
+      T30x30_203:  { key:'T30x30_203',  label:'30 × 30 mm',       code:'T30*30',  w_mm:30, h_mm:30, w_px:240, h_px:240, margin:10, dpi:203 },
+      T40x20_203:  { key:'T40x20_203',  label:'40 × 20 mm (横)',  code:'T40*20',  w_mm:40, h_mm:20, w_px:320, h_px:160, margin:10, dpi:203 },
+      T40x30_203:  { key:'T40x30_203',  label:'40 × 30 mm (横)',  code:'T40*30',  w_mm:40, h_mm:30, w_px:320, h_px:240, margin:10, dpi:203 },
+      T50x30_203:  { key:'T50x30_203',  label:'50 × 30 mm (大横)',code:'T50*30',  w_mm:50, h_mm:30, w_px:384, h_px:240, margin:8,  dpi:203, offset_y_px:4 },
+      T50x80_203:  { key:'T50x80_203',  label:'50 × 80 mm (大)',  code:'T50*80',  w_mm:50, h_mm:80, w_px:384, h_px:640, margin:10, dpi:203 },
+      T60x40_203:  { key:'T60x40_203',  label:'60 × 40 mm',       code:'T60*40',  w_mm:60, h_mm:40, w_px:480, h_px:320, margin:10, dpi:203 },
+    }
+  };
+  // model 默认选择
+  const DEFAULT_MODEL = 'b1pro';
+
+  function setStatus(dotCls, text, sub){
+    statusDot.className = 'status-dot ' + (dotCls||'');
+    const first = statusText.firstChild;
+    if(first && first.nodeType === 3){
+      first.nodeValue = text;
+    } else {
+      statusText.innerHTML = '';
+      statusText.appendChild(document.createTextNode(text));
+      // 重建 statusSub 容器
+      const s = document.createElement('div');
+      s.className = 'status-sub';
+      s.id = 'statusSub';
+      statusText.appendChild(s);
+      // 同步外部引用
+      window.__syncStatusSub && window.__syncStatusSub();
+    }
+    const subEl = document.getElementById('statusSub');
+    if(subEl){ subEl.textContent = sub||''; }
+  }
+  function setStatusHTML(dotCls, html, sub){
+    statusDot.className = 'status-dot ' + (dotCls||'');
+    statusText.innerHTML = html;
+    // 追加 statusSub
+    if(!document.getElementById('statusSub')){
+      const s = document.createElement('div');
+      s.className = 'status-sub';
+      s.id = 'statusSub';
+      statusText.appendChild(s);
+    }
+    const subEl = document.getElementById('statusSub');
+    if(subEl){ subEl.textContent = sub||''; }
+  }
+
+  /* ---------- 型号 / 尺寸 下拉菜单 ---------- */
+  function populateModels(){
+    selModel.innerHTML = '';
+    Object.entries(REGISTRY.models).forEach(([k, m]) => {
+      const o = document.createElement('option');
+      o.value = k;
+      o.textContent = `${m.label} (${m.dpi} dpi)`;
+      selModel.appendChild(o);
+    });
+    selModel.value = DEFAULT_MODEL;
+  }
+  function populateLabelsForModel(modelKey){
+    const m = REGISTRY.models[modelKey];
+    const dpi = m ? m.dpi : 300;
+    selLabel.innerHTML = '';
+    const matches = Object.entries(REGISTRY.sizes).filter(([,s]) => s.dpi === dpi);
+    // 如果没有匹配的,显示全部(兜底)
+    const list = matches.length ? matches : Object.entries(REGISTRY.sizes);
+    list.forEach(([k, s]) => {
+      const o = document.createElement('option');
+      o.value = k;
+      const orient = s.w_px >= s.h_px ? '→横' : '↕竖';
+      o.textContent = `${s.label}  ${orient} (${s.w_px}×${s.h_px}px)`;
+      selLabel.appendChild(o);
+    });
+    // 默认选一个"最常用"的中间尺寸
+    const defaultPick = list.find(([k]) => k.includes('40x30')) || list.find(([k]) => k.includes('50x30')) || list[0];
+    selLabel.value = defaultPick[0];
+  }
+  function getCurrentModel(){ return REGISTRY.models[selModel.value]; }
+  function getCurrentLabel(){ return REGISTRY.sizes[selLabel.value]; }
+
+  /* ---------- 支持检测 ---------- */
+  function detectSupport(){
+    const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
+    const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
+    if(!LIB){
+      setStatusHTML('no', 'Niimbot 驱动加载失败',
+        'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot,请检查网络或关闭广告拦截后刷新');
+      btnConnect.disabled = true;
+      btnPrint.disabled = true;
+      return false;
+    }
+    if(!WB || !BT.isSupported()){
+      setStatusHTML('no', '浏览器不支持 Web Bluetooth',
+        '请在 Chrome / Edge 桌面或安卓版中打开,并保证地址为 HTTPS 或 localhost(iOS 可尝试 Bluefy 浏览器)');
+      btnConnect.disabled = true;
+      btnPrint.disabled = true;
+      return false;
+    }
+    setStatus('ready', '未连接打印机', '先选择型号和标签纸,再点下方按钮配对你的精臣打印机');
+    btnConnect.disabled = false;
+    btnConnect.textContent = '① 连接 & 识别打印机';
+    printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
+    populateModels();
+    populateLabelsForModel(DEFAULT_MODEL);
+    return true;
+  }
+
+  /* ---------- 连接 / 识别(niimbot v2.4:Niimbot.identify 自动连接) ---------- */
+  async function onConnect(){
+    if(!BT) return;
+    const modelHint = getCurrentModel();
+    btnConnect.disabled = true;
+    try{
+      showToast('正在弹出蓝牙配对列表...');
+      // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
+      const allPrefixes = [...new Set(Object.values(REGISTRY.models).flatMap(m => m.name_prefixes || []))];
+      const info = await BT.identify({ ...modelHint, name_prefixes: allPrefixes });
+      lastIdentifyInfo = info;
+      // 根据返回的 modelId 自动匹配正确型号
+      const matchedKey = Object.keys(REGISTRY.models).find(k => REGISTRY.models[k].id === info.modelId);
+      if(matchedKey && matchedKey !== selModel.value){
+        selModel.value = matchedKey;
+        populateLabelsForModel(matchedKey);
+      }
+      const devName = (info && info.deviceName) || 'Niimbot';
+      const extra = matchedKey ? `已自动切换型号:${REGISTRY.models[matchedKey].label}` : `型号 ID:${info.modelId}(未知型号,请手动选择)`;
+      setStatus('ok', `✅ 已连接:${devName}`, extra);
+      btnConnect.textContent = '断开连接';
+      btnConnect.removeEventListener('click', onConnect);
+      btnConnect.addEventListener('click', onDisconnect, { once:true });
+      btnPrint.disabled = false;
+      printBox.classList.add('connected');
+      showToast('连接成功,可以打印');
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? err.message : '连接失败(用户可能取消了蓝牙选择)';
+      setStatus('no', '连接失败', msg);
+      btnConnect.textContent = '重新连接';
+      showToast(msg, true);
+    }finally{
+      btnConnect.disabled = false;
+    }
+  }
+
+  async function onDisconnect(){
+    try{ if(BT) await BT.disconnect(); }catch(e){}
+    isConnected = false;
+    lastIdentifyInfo = null;
+    btnConnect.textContent = '① 连接 & 识别打印机';
+    btnConnect.removeEventListener('click', onDisconnect);
+    btnConnect.addEventListener('click', onConnect, { once:true });
+    btnPrint.disabled = true;
+    printBox.classList.remove('connected');
+    setStatus('ready', '未连接打印机', '选择型号和标签纸后点"连接"');
+    showToast('已断开');
+  }
+
+  /* ---------- 渲染到标签尺寸的新 canvas(含等比缩放 + 左右偏移校准 + 黑白二值化) ---------- */
+  function renderToPrintSize(lbl, fitMode, offsetX){
+    const pc = document.createElement('canvas');
+    pc.width = lbl.w_px;
+    pc.height = lbl.h_px;
+    const pctx = pc.getContext('2d');
+    pctx.fillStyle = '#ffffff';
+    pctx.fillRect(0, 0, pc.width, pc.height);
+
+    let dw, dh, dx, dy;
+    const iw = W, ih = H;
+    if(fitMode === 'stretch'){
+      dw = pc.width; dh = pc.height; dx = 0; dy = 0;
+    } else if(fitMode === 'cover'){
+      const r = Math.max(pc.width/iw, pc.height/ih);
+      dw = iw*r; dh = ih*r;
+      dx = (pc.width - dw)/2;
+      dy = (pc.height - dh)/2;
+    } else {
+      const r = Math.min(pc.width/iw, pc.height/ih);
+      dw = iw*r; dh = ih*r;
+      dx = (pc.width - dw)/2;
+      dy = (pc.height - dh)/2;
+    }
+    // 左右偏移校准:正值整体右移,负值整体左移
+    dx += Number(offsetX) || 0;
+    pctx.drawImage(canvas, 0, 0, iw, ih, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
+    // 二值化(热敏打印机只有黑点/白点,阈值 210 兼顾浅灰保留与文字锐度)
+    try{
+      const img = pctx.getImageData(0, 0, pc.width, pc.height);
+      const d = img.data;
+      for(let i=0; i<d.length; i+=4){
+        const l = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+        if(l < 210){ d[i]=d[i+1]=d[i+2]=0; } else { d[i]=d[i+1]=d[i+2]=255; }
+        d[i+3] = 255;
+      }
+      pctx.putImageData(img, 0, 0);
+    }catch(e){}
+    return pc;
+  }
+
+  /* ---------- 打印(Niimbot.printImage,PNG dataURL) ---------- */
+  async function onPrint(){
+    if(!BT){ showToast('Niimbot 驱动未加载', true); return; }
+    draw(true);
+    const model = getCurrentModel();
+    const size  = getCurrentLabel();
+    if(!model || !size){ showToast('请先选择型号和尺寸', true); return; }
+    const fit = selFit.value;
+    const copies = Math.max(1, Math.min(99, parseInt(copiesInp.value||'1')));
+    const density = Math.max(1, Math.min(5, parseInt(selDensity.value||'3')));
+    const offsetX = Math.max(-99, Math.min(99, parseInt(selOffsetX.value||'0')));
+
+    btnPrint.disabled = true;
+    let progressTimer = null;
+    try{
+      const offsetHint = offsetX===0 ? '' : ` · 偏移${offsetX>0?'+':''}${offsetX}px`;
+      showToast(`准备打印...(${copies}份 × ${size.label}${offsetHint})`);
+      const printCanvas = renderToPrintSize(size, fit, offsetX);
+      const pngDataURL = printCanvas.toDataURL('image/png');
+      // 真实打印进度
+      const onProgress = (msg) => {
+        const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中...');
+        setStatus('ok', '🖨 打印中…', text);
+      };
+      await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
+      setStatus('ok', `✅ 打印完成 (${copies}份 × ${size.label})`, lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : '');
+      showToast(`打印完成 ✓`);
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? err.message : '打印失败';
+      setStatus('no', '打印失败', msg);
+      showToast('打印失败:' + msg, true);
+    }finally{
+      btnPrint.disabled = false;
+    }
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  selModel.addEventListener('change', () => {
+    const cur = selModel.value;
+    populateLabelsForModel(cur);
+    showToast(`已切换到 ${REGISTRY.models[cur].label},尺寸列表已更新`);
+  });
+
+  /* ============ 初始化 ============ */
+  document.getElementById('exportBtn').addEventListener('click', exportJPG);
+  document.getElementById('clearBtn').addEventListener('click', clearContents);
+  btnConnect.addEventListener('click', onConnect, { once:true });
+  btnPrint.addEventListener('click', onPrint);
+
+  buildInputs();
+  draw();
+  // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)
+  if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
+    document.fonts.ready.then(() => { draw(); }).catch(()=>{});
+  }
+  // 兼容老环境的兜底:2 秒后再画一次(给 CDN 充足时间)
+  setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+
+  // 等待 niimbot.js 加载完成后再检测
+  let checkTimes = 0;
+  function checkReady(){
+    checkTimes++;
+    if(typeof window.Niimbot !== 'undefined' && typeof window.Niimbot.isSupported === 'function'){
+      detectSupport();
+    } else if(checkTimes < 12){
+      setTimeout(checkReady, 500);
+    } else {
+      detectSupport();  // 12 次都没等到,给出失败状态
+    }
+  }
+  if(document.readyState === 'complete'){ checkReady(); }
+  else{ window.addEventListener('load', checkReady); }
+})();
+</script>
+</body>
+</html>
