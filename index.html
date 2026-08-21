@@ -192,9 +192,9 @@
     if(/数量|个数|件数|qty/i.test(t)) return '120';
     if(/价格|单价|金额|售价|price|cost/i.test(t)) return '¥299';
     if(/位置|库位|存放|仓位|货架|location|rack|shelf/i.test(t)) return 'A-03-02';
-    if(/备注|说明|note|remark|comment|memo/i.test(t)) return '其他说明';
-    if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return '张工';
-    return '输入内容';
+    if(/备注|说明|note|remark|comment|memo/i.test(t)) return 'Notes';
+    if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return 'User';
+    return 'Enter content';
   }
   function loadTitles(){
     try{ const s=JSON.parse(localStorage.getItem(STORE_KEY)); if(Array.isArray(s)&&s.length===4) return s; }catch(e){}
@@ -245,12 +245,14 @@
     for(let i=0;i<4;i++){
       const col = i%2, row = Math.floor(i/2);
       const x = col*BW, y = row*BH;
-      // 标题文本:左右内边距 34px,基线在 y+54 (=108/2,保留原行高保证视觉垂直位置不变)
+      // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
+      // 第一行(标题)置于上方,距块顶部 72px,与第二行中心保持 78px 间距,视觉不挤
+      // 标题文本:左右内边距 34px
       ctx.fillStyle='#000000';
       ctx.font = FONT_UI_TITLE;
       ctx.textBaseline='middle'; ctx.textAlign='left';
-      drawTextClip(titles[i]||'', x+34, y+54, BW-68, true);
-      // 内容区:中心 y+108+96=y+204,左右内边距 29px
+      drawTextClip(titles[i]||'', x+34, y+72, BW-68, true);
+      // 内容区:中心 y+150 (整块正中心),左右内边距 29px
       // 预览(official=false)空内容画灰色占位提示;正式导出/打印(official=true)时空内容留白,不要把提示字打出来
       const hasContent = !!String(contents[i]||'').trim();
       let contentText = '';
@@ -266,7 +268,7 @@
       }
       ctx.font = FONT_UI_CONTENT;
       ctx.textAlign='center';
-      drawTextClip(contentText||'', x+BW/2, y+204, BW-58, false);
+      drawTextClip(contentText||'', x+BW/2, y+180, BW-58, false);
     }
   }
   function drawTextClip(text, x, y, maxW, isTitle){
