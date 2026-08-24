@@ -11,97 +11,105 @@
 </head>
 <body>
   <header>
-    <h1>Label Maker 标签生成工具</h1>
+    <h1>Label Maker</h1>
     <p>developed by 酷卡</p>
   </header>
 
-  <!-- 1 输入 -->
-  <section class="step">
-    <div class="step-head">
-      <span class="step-num">01</span><h2>标签编辑</h2>
-    </div>
-    <div class="grid" id="inputGrid"></div>
-  </section>
+  <div class="layout">
+    <!-- 左栏:编辑 + 打印 -->
+    <main class="col-main">
 
-  <!-- 2 预览 -->
-  <section class="step">
-    <div class="step-head">
-      <span class="step-num">02</span><h2>标签预览</h2>
-      <span class="tip">4:3 HD · 等比缩放到 300dpi 标签</span>
-    </div>
-    <div class="preview-wrap">
-      <canvas id="canvas" width="800" height="600"></canvas>
-    </div>
-    <div class="preview-meta">CANVAS · 800 × 600 HD · PRINT 300dpi READY · EXPORT 4K JPG</div>
-  </section>
+      <!-- 01 标签编辑 -->
+      <section class="step">
+        <div class="step-head">
+          <span class="step-num">01</span><h2>标签编辑</h2>
+        </div>
+        <div class="grid" id="inputGrid"></div>
+      </section>
 
-  <!-- 3 导出 / 打印 -->
-  <section class="step">
-    <div class="step-head">
-      <span class="step-num">03</span><h2>标签打印</h2>
-    </div>
+      <!-- 03 打印 -->
+      <section class="step">
+        <div class="step-head">
+          <span class="step-num">02</span><h2>打印</h2>
+        </div>
 
-    <div class="print-box" id="printBox">
-      <div class="status-line">
-        <span class="status-dot" id="statusDot"></span>
-        <div class="status-text" id="statusText">
-          正在检测浏览器 Web Bluetooth 支持
-          <div class="status-sub" id="statusSub"></div>
-        </div>
-      </div>
-      <div class="connect-row">
-        <button class="btn-connect" id="btnConnect" disabled>连接打印机</button>
-        <button class="btn-print" id="printBtn" disabled>立即打印</button>
-      </div>
+        <div class="print-box" id="printBox">
+          <div class="status-line">
+            <span class="status-dot" id="statusDot"></span>
+            <div class="status-text" id="statusText">
+              正在检测浏览器 Web Bluetooth 支持
+              <div class="status-sub" id="statusSub"></div>
+            </div>
+          </div>
+          <div class="connect-row">
+            <button class="btn-connect" id="btnConnect" disabled>连接打印机</button>
+            <button class="btn-print" id="printBtn" disabled>立即打印</button>
+          </div>
 
-      <div class="select-row" style="margin-top:12px" id="printSelects" hidden>
-        <div>
-          <label>打印机型号 MODEL</label>
-          <select id="selModel"></select>
-        </div>
-        <div>
-          <label>标签尺寸 LABEL SIZE</label>
-          <select id="selLabel"></select>
-        </div>
-        <div>
-          <label>填充模式 FIT MODE</label>
-          <select id="selFit">
-            <option value="contain">等比缩放居中(推荐)</option>
-            <option value="cover">等比裁剪填满</option>
-            <option value="stretch">拉伸填满</option>
-          </select>
-        </div>
-        <div>
-          <label>打印浓度 DENSITY</label>
-          <select id="selDensity">
-            <option value="1">1 · 淡</option>
-            <option value="2">2</option>
-            <option value="3" selected>3 · 默认</option>
-            <option value="4">4</option>
-            <option value="5">5 · 深</option>
-          </select>
-        </div>
-        <div>
-          <label>份数 COPIES</label>
-          <input id="copies" type="number" min="1" max="99" value="1">
-        </div>
-        <div>
-          <label>左右偏移 OFFSET X (px · -99~+99)</label>
-          <input id="selOffsetX" type="number" min="-99" max="99" step="1" value="0">
-        </div>
-        <div>
-          <label>上下偏移 OFFSET Y (px · -99~+99)</label>
-          <input id="selOffsetY" type="number" min="-99" max="99" step="1" value="0">
-        </div>
-      </div>
+          <div class="select-row" id="printSelects" hidden>
+            <div>
+              <label>打印机型号</label>
+              <select id="selModel"></select>
+            </div>
+            <div>
+              <label>标签尺寸</label>
+              <select id="selLabel"></select>
+            </div>
+            <div>
+              <label>填充模式</label>
+              <select id="selFit">
+                <option value="contain">等比缩放居中(推荐)</option>
+                <option value="cover">等比裁剪填满</option>
+                <option value="stretch">拉伸填满</option>
+              </select>
+            </div>
+            <div>
+              <label>打印浓度</label>
+              <select id="selDensity">
+                <option value="1">1 · 淡</option>
+                <option value="2">2</option>
+                <option value="3" selected>3 · 默认</option>
+                <option value="4">4</option>
+                <option value="5">5 · 深</option>
+              </select>
+            </div>
+            <div>
+              <label>份数</label>
+              <input id="copies" type="number" min="1" max="99" value="1">
+            </div>
+            <div>
+              <label>左右偏移 (px · -99~+99)</label>
+              <input id="selOffsetX" type="number" min="-99" max="99" step="1" value="0">
+            </div>
+            <div>
+              <label>上下偏移 (px · -99~+99)</label>
+              <input id="selOffsetY" type="number" min="-99" max="99" step="1" value="0">
+            </div>
+          </div>
 
-    </div>
+        </div>
 
-    <div class="actions" style="margin-top:14px">
-      <button class="btn-export" id="exportBtn">下载 JPG</button>
-      <button class="btn-reset" id="clearBtn">清空 RESET</button>
-    </div>
-  </section>
+        <div class="actions">
+          <button class="btn-export" id="exportBtn">下载 JPG</button>
+          <button class="btn-reset" id="clearBtn">清空</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 右栏:预览(sticky 常驻) -->
+    <aside class="col-aside">
+      <section class="step preview-section">
+        <div class="step-head">
+          <span class="step-num">预览</span><h2>标签预览</h2>
+        </div>
+        <div class="preview-wrap">
+          <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        <div class="preview-meta">实时预览 · 4:3 HD</div>
+      </section>
+    </aside>
+  </div>
 
   <div class="toast" id="toast"></div>
 
