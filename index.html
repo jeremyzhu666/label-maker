@@ -182,7 +182,7 @@
   const FONT_UI_TITLE   = '400 44px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
   const FONT_UI_CONTENT = '300 68px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
   const STORE_KEY='tpl_titles_v3';
-  const defaultTitles=['名称','编号','日期','备注'];
+  const defaultTitles=['名称','编号','日期','自定义'];
   // 根据第一行模板项智能生成第二行 placeholder
   function smartPlaceholder(title){
     const t = (title||'').trim();
@@ -194,6 +194,7 @@
     if(/价格|单价|金额|售价|price|cost/i.test(t)) return '¥299';
     if(/位置|库位|存放|仓位|货架|location|rack|shelf/i.test(t)) return 'A-03-02';
     if(/备注|说明|note|remark|comment|memo/i.test(t)) return 'Notes';
+    if(/自定义|custom/i.test(t)) return 'Custom';
     if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return 'User';
     return '编辑模板';
   }
