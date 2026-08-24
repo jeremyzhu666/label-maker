@@ -225,7 +225,7 @@ canvas{
 }
 
 /* —— 按钮:首字母大写,字距正常,扁平无阴影 —— */
-button:not(.stepper-btn){
+.btn{
   flex:1;
   height:40px;
   padding:0 var(--s-4);
@@ -240,8 +240,8 @@ button:not(.stepper-btn){
   background:var(--card);
   color:var(--text);
 }
-button:not(.stepper-btn):disabled{opacity:.4;cursor:not-allowed}
-button:not(.stepper-btn):active{background:var(--bg)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:active{background:var(--bg)}
 
 .btn-export{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn-export:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
@@ -289,5 +289,5 @@ button:not(.stepper-btn):active{background:var(--bg)}
   .grid{grid-template-columns:1fr}
   .select-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
-  button{height:38px;font-size:var(--text-sm)}
+  .btn{height:38px;font-size:var(--text-sm)}
 }

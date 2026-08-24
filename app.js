@@ -128,49 +128,47 @@
     else{ contents[i] = e.target.value; }
     scheduleDraw(i);
   }
+  function clearCell(x, y){
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(x, y, BW, BH);
+  }
+  function drawCell(i, official){
+    const col = i%2, row = Math.floor(i/2);
+    const x = col*BW, y = row*BH;
+    // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
+    // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
+    ctx.fillStyle='#000000';
+    ctx.font = FONT_UI_TITLE;
+    ctx.textBaseline='middle'; ctx.textAlign='left';
+    drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
+    // 内容区:预览空内容画灰色占位提示;正式导出/打印时空内容留白
+    const hasContent = !!String(contents[i]||'').trim();
+    let contentText = '';
+    if(hasContent){
+      ctx.fillStyle = '#000000';
+      contentText = contents[i];
+    } else if(!official){
+      ctx.fillStyle = '#9aa1b4';
+      contentText = smartPlaceholder(titles[i]);
+    } else {
+      ctx.fillStyle = '#000000';
+      contentText = '';
+    }
+    ctx.font = FONT_UI_CONTENT;
+    ctx.textAlign='center';
+    drawTextClip(contentText||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
+  }
   function draw(official){
-    // 全画(初始化/导出/打印)或脏区画
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
     if(allDirty){
       ctx.fillStyle='#ffffff';
       ctx.fillRect(0,0,W,H);
     }
     for(let i=0;i<4;i++){
-      // 脏区模式:只画 dirtyCells 里的格子
       if(!allDirty && !dirtyCells.has(i)) continue;
-      const col = i%2, row = Math.floor(i/2);
-      const x = col*BW, y = row*BH;
-      // 单格重画:先清空该格区域
-      if(!allDirty){
-        ctx.fillStyle='#ffffff';
-        ctx.fillRect(x, y, BW, BH);
-      }
-      // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
-      // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
-      // 标题文本:左右内边距 CONFIG.layout.padX
-      ctx.fillStyle='#000000';
-      ctx.font = FONT_UI_TITLE;
-      ctx.textBaseline='middle'; ctx.textAlign='left';
-      drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
-      // 内容区:中心 y+CONFIG.layout.contentY (整块正中心),左右内边距 (BW-CONFIG.layout.contentMaxPadX)/2
-      // 预览(official=false)空内容画灰色占位提示;正式导出/打印(official=true)时空内容留白,不要把提示字打出来
-      const hasContent = !!String(contents[i]||'').trim();
-      let contentText = '';
-      if(hasContent){
-        ctx.fillStyle = '#000000';
-        contentText = contents[i];
-      } else if(!official){
-        ctx.fillStyle = '#9aa1b4';
-        contentText = smartPlaceholder(titles[i]);
-      } else {
-        ctx.fillStyle = '#000000';
-        contentText = '';
-      }
-      ctx.font = FONT_UI_CONTENT;
-      ctx.textAlign='center';
-      drawTextClip(contentText||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
+      if(!allDirty) clearCell((i%2)*BW, Math.floor(i/2)*BH);
+      drawCell(i, official);
     }
-    // 画完清空脏区
     dirtyCells.clear();
   }
   // measureText 缓存:跨格子跨帧复用,text+size 做 key,文字不变时零测量开销
@@ -283,29 +281,20 @@
   let state = STATE.UNSUPPORTED;
   let statusCtx = { text:'', sub:'' };   // 传给 transition 的状态文案
 
+  /* 状态映射:纯数据,描述每状态的 UI 表现(text/sub 由 statusCtx 覆盖) */
+  const STATUS_MAP = {
+    [STATE.UNSUPPORTED]:  { dot:'no',    text:'不支持',        btn:'连接打印机', btnDisabled:true,  printDisabled:true,  box:false },
+    [STATE.DISCONNECTED]: { dot:'ready', text:'未连接打印机',  btn:'连接打印机', btnDisabled:false, printDisabled:true,  box:false },
+    [STATE.CONNECTING]:   { dot:'ready', text:'连接中…',       btn:'连接中…',   btnDisabled:true,  printDisabled:true,  box:false },
+    [STATE.CONNECTED]:    { dot:'ok',    text:'已连接',        btn:'断开连接',   btnDisabled:false, printDisabled:false, box:true  },
+    [STATE.DISCONNECTING]:{ dot:'ready', text:'断开中…',       btn:'断开中…',   btnDisabled:true,  printDisabled:true,  box:true  }
+  };
   function renderStatus(){
-    const map = {
-      [STATE.UNSUPPORTED]:  { dot:'no',   text: statusCtx.text || '不支持',          sub: statusCtx.sub, btn:'连接打印机', btnDisabled:true,  printDisabled:true,  box:false },
-      [STATE.DISCONNECTED]: { dot:'ready', text: statusCtx.text || '未连接打印机',    sub: statusCtx.sub, btn:'连接打印机', btnDisabled:false, printDisabled:true,  box:false },
-      [STATE.CONNECTING]:   { dot:'ready', text: statusCtx.text || '连接中…',         sub: statusCtx.sub, btn:'连接中…',    btnDisabled:true,  printDisabled:true,  box:false },
-      [STATE.CONNECTED]:    { dot:'ok',    text: statusCtx.text || '已连接',          sub: statusCtx.sub, btn:'断开连接',   btnDisabled:false, printDisabled:false, box:true  },
-      [STATE.DISCONNECTING]:{ dot:'ready', text: statusCtx.text || '断开中…',         sub: statusCtx.sub, btn:'断开中…',    btnDisabled:true,  printDisabled:true,  box:true  }
-    };
-    const m = map[state] || map[STATE.DISCONNECTED];
-    // 状态点
+    const m = STATUS_MAP[state] || STATUS_MAP[STATE.DISCONNECTED];
     statusDot.className = 'status-dot ' + m.dot;
-    // 状态文字:保留子元素 statusSub 结构,只替换文本节点,避免 innerHTML 重建丢失引用
-    const first = statusText.firstChild;
-    if(first && first.nodeType === 3){ first.nodeValue = m.text; }
-    else {
-      statusText.textContent = m.text;
-      const s = document.createElement('div');
-      s.className = 'status-sub'; s.id = 'statusSub';
-      statusText.appendChild(s);
-    }
-    const subEl = document.getElementById('statusSub');
-    if(subEl){ subEl.textContent = m.sub || ''; }
-    // 按钮 + 打印按钮 + 容器
+    // statusText 初始 HTML 是"文本节点 + statusSub div",firstChild 必是文本节点
+    statusText.firstChild.nodeValue = statusCtx.text || m.text;
+    statusSub.textContent = statusCtx.sub || '';
     btnConnect.textContent = m.btn;
     btnConnect.disabled = m.btnDisabled;
     btnPrint.disabled = m.printDisabled;
