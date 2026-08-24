@@ -129,34 +129,45 @@
   function drawTextClip(text, x, y, maxW, isTitle){
     let t=String(text);
     if(!t){ return; }
+    // 快速路径:原字号能放下,直接画
     if(ctx.measureText(t).width <= maxW){ ctx.fillText(t, x, y); return; }
     const baseFont = ctx.font;
-    const m = baseFont.match(/^(\d+)\s*px/);
-    if(m){
-      const origSize = +m[1];
-      const minSize = isTitle ? CONFIG.font.minTitle : CONFIG.font.minContent;
-      // 二分查找最大能放下的字号(O(log n))
-      let lo = minSize, hi = origSize, bestSize = minSize;
-      while(lo <= hi){
-        const mid = Math.floor((lo + hi) / 2);
-        ctx.font = baseFont.replace(/\d+\s*px/, mid+'px');
-        if(ctx.measureText(t).width <= maxW){
-          bestSize = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
-        }
-      }
-      // 用找到的最大字号,若仍放不下则截断加省略号
-      ctx.font = baseFont.replace(/\d+\s*px/, bestSize+'px');
-      if(ctx.measureText(t).width <= maxW){
-        ctx.fillText(t, x, y);
+    const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
+    const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
+    const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
+    const family   = CONFIG.font.family;
+    // 缓存:字号 → 该字号下文本宽度,避免重复 measureText(字体测量开销大)
+    const widthCache = new Map();
+    const widthAt = (size) => {
+      if(widthCache.has(size)) return widthCache.get(size);
+      ctx.font = weight + ' ' + size + 'px ' + family;
+      const w = ctx.measureText(t).width;
+      widthCache.set(size, w);
+      return w;
+    };
+    // 二分查找最大能放下的字号(O(log n))
+    let lo = minSize, hi = origSize, bestSize = minSize;
+    while(lo <= hi){
+      const mid = Math.floor((lo + hi) / 2);
+      if(widthAt(mid) <= maxW){
+        bestSize = mid;
+        lo = mid + 1;
       } else {
-        while(t.length > 1 && ctx.measureText(t+'…').width > maxW){ t = t.slice(0, -1); }
-        ctx.fillText(t+'…', x, y);
+        hi = mid - 1;
       }
-      ctx.font = baseFont;
     }
+    // 用找到的最大字号画;若仍放不下则截断加省略号
+    ctx.font = weight + ' ' + bestSize + 'px ' + family;
+    if(widthAt(bestSize) <= maxW){
+      ctx.fillText(t, x, y);
+    } else {
+      while(t.length > 1 && ctx.measureText(t+'…').width <= maxW === false){
+        t = t.slice(0, -1);
+        if(ctx.measureText(t+'…').width <= maxW) break;
+      }
+      ctx.fillText(t+'…', x, y);
+    }
+    ctx.font = baseFont;
   }
   function exportJPG(){
     draw(true);
