@@ -45,7 +45,7 @@
   function smartPlaceholder(){ return '编辑模板'; }
   // 无保存功能:每次刷新回到默认状态
   let titles = defaultTitles.slice();
-  let contents = ['','','',''];
+  let contents = ['Apple','A01','YYMMDD','for MacOS'];
 
   const grid = document.getElementById('inputGrid');
   const canvas = document.getElementById('canvas');

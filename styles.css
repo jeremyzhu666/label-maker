@@ -71,7 +71,7 @@ header p{font-size:var(--text-xs);color:var(--text-mute);margin-top:var(--s-1);f
   padding:var(--s-4);
 }
 /* 编辑区与预览区严格等高:用统一变量,三重保险确保一致 */
-:root{ --editor-height:300px; }
+:root{ --editor-height:250px; }
 .col-main > .step:first-child,
 .preview-section{
   height:var(--editor-height);
@@ -109,7 +109,7 @@ label{
 }
 input[type=text],input[type=number],select{
   width:100%;
-  padding:11px 12px;
+  padding:8px 12px;
   border:1px solid var(--border-strong);
   border-radius:var(--radius);
   font-size:var(--text-sm);
