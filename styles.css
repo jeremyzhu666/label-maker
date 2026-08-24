@@ -225,6 +225,7 @@ canvas.ready{opacity:1}
 .btn-print{
   background:var(--text);color:#fff;border-color:var(--text);
   flex:0 0 auto;padding:0 var(--s-4);
+  min-width:96px;
 }
 .btn-print:hover{background:#000;border-color:#000}
 

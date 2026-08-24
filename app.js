@@ -55,18 +55,15 @@
     for(let i=0;i<parts.length;i++){ v = v && v[parts[i]]; }
     return typeof v === 'function' ? v : (v === undefined ? path : v);
   }
-  // applyI18n:遍历 data-i18n / data-i18n-aria 属性,批量更新 DOM
+  // applyI18n:一次遍历更新所有 i18n 元素,避免多次 querySelectorAll
   function applyI18n(){
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     document.title = S.docTitle;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      el.textContent = t(el.dataset.i18n);
-    });
-    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
-      el.setAttribute('aria-label', t(el.dataset.i18nAria));
-    });
-    document.querySelectorAll('.lang-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.lang === lang);
+    document.querySelectorAll('[data-i18n],[data-i18n-aria],[data-i18n-placeholder],.lang-btn').forEach(el => {
+      if(el.dataset.i18n)             el.textContent = t(el.dataset.i18n);
+      if(el.dataset.i18nAria)         el.setAttribute('aria-label', t(el.dataset.i18nAria));
+      if(el.dataset.i18nPlaceholder)  el.placeholder = t(el.dataset.i18nPlaceholder);
+      if(el.classList.contains('lang-btn')) el.classList.toggle('active', el.dataset.lang === lang);
     });
   }
   function setLang(l){
@@ -77,7 +74,7 @@
     // 默认标题/内容随语言切换,重置输入并重绘
     titles = S.defaults.titles.slice();
     contents = S.defaults.contents.slice();
-    buildInputs();
+    fillInputs();
     draw();
     // 状态文案同步刷新
     renderStatus();
@@ -93,7 +90,7 @@
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const toastEl = document.getElementById('toast');
-  // input 引用数组:buildInputs 创建时保存,onInput 直接取引用,避免 querySelector 脆弱查询
+  // input 引用数组:HTML 预写结构,init 时收集引用
   const titleInputs = [];
   const contentInputs = [];
 
@@ -112,38 +109,23 @@
     drawScheduled = true;
     requestAnimationFrame(() => { drawScheduled = false; draw(); });
   }
-  function buildInputs(){
-    grid.innerHTML = '';
+  // 收集 HTML 预写的 input 引用 + 绑定事件(只执行一次)
+  function bindInputs(){
+    const inputs = grid.querySelectorAll('input');
     for(let i=0;i<4;i++){
-      const g = document.createElement('div');
-      g.className = 'block-group';
-      g.setAttribute('data-idx', String(i+1).padStart(2,'0'));
-
-      const titleInp = document.createElement('input');
-      titleInp.type = 'text';
-      titleInp.className = 'title-input';
-      titleInp.dataset.type = 't';
-      titleInp.dataset.i = i;
-      titleInp.value = titles[i];
-      titleInp.placeholder = S.input.titlePlaceholder;
-      titleInp.maxLength = CONFIG.input.maxTitleLen;
-      titleInp.addEventListener('input', onInput);
-
-      const contentInp = document.createElement('input');
-      contentInp.type = 'text';
-      contentInp.dataset.type = 'c';
-      contentInp.dataset.i = i;
-      contentInp.value = contents[i];
-      contentInp.placeholder = smartPlaceholder();
-      contentInp.maxLength = CONFIG.input.maxContentLen;
-      contentInp.addEventListener('input', onInput);
-
-      g.appendChild(titleInp);
-      g.appendChild(contentInp);
-      grid.appendChild(g);
-      // 保存引用,onInput 直接取,避免 querySelector
-      titleInputs[i] = titleInp;
-      contentInputs[i] = contentInp;
+      titleInputs[i] = inputs[i*2];
+      contentInputs[i] = inputs[i*2+1];
+      titleInputs[i].addEventListener('input', onInput);
+      contentInputs[i].addEventListener('input', onInput);
+    }
+  }
+  // 填充值和 placeholder(语言切换时也调用)
+  function fillInputs(){
+    for(let i=0;i<4;i++){
+      titleInputs[i].value = titles[i];
+      contentInputs[i].value = contents[i];
+      titleInputs[i].placeholder = S.input.titlePlaceholder;
+      contentInputs[i].placeholder = smartPlaceholder();
     }
   }
   function onInput(e){
@@ -156,60 +138,82 @@
     else{ contents[i] = e.target.value; }
     scheduleDraw(i);
   }
-  function clearCell(x, y){
-    ctx.fillStyle='#ffffff';
-    ctx.fillRect(x, y, BW, BH);
-  }
-  function drawCell(i, official){
-    const col = i%2, row = Math.floor(i/2);
-    const x = col*BW, y = row*BH;
-    // 每帧重置所有 ctx 状态,避免上一帧残留导致抖动
-    ctx.textBaseline = 'middle';
-    // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
-    // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
-    ctx.fillStyle='#000000';
-    ctx.font = FONT_UI_TITLE;
-    ctx.textAlign='left';
-    drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
-    // 内容区:有内容画黑色;预览空内容画灰色占位提示;正式导出/打印时空内容留白
-    const hasContent = !!String(contents[i]||'').trim();
-    const mode = hasContent ? 'content' : (official ? 'blank' : 'placeholder');
-    const CONTENT_MODE = {
-      content:    { color:'#000000', text:contents[i] },
-      blank:      { color:'#000000', text:'' },
-      placeholder:{ color:'#9aa1b4', text:smartPlaceholder() }
-    };
-    const { color, text } = CONTENT_MODE[mode];
-    ctx.fillStyle = color;
-    ctx.font = FONT_UI_CONTENT;
-    ctx.textAlign='center';
-    drawTextClip(text||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
-  }
+  // 三批渲染:先清白→再标题→再内容,减少 ctx 状态切换次数
+  const CONTENT_MODE = {
+    content:    { color:'#000000' },
+    blank:      { color:'#000000' },
+    placeholder:{ color:'#9aa1b4' }
+  };
+  // 预分配 4 个静态槽位,避免每次 draw 重建数组
+  const taskSlots = [{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0}];
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
+    const cells = allDirty ? [0,1,2,3] : [...dirtyCells];
+
+    // 第一批:清白底
+    ctx.fillStyle = '#ffffff';
     if(allDirty){
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(0,0,W,H);
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      for(const i of cells){
+        ctx.fillRect((i%2)*BW, Math.floor(i/2)*BH, BW, BH);
+      }
     }
-    for(let i=0;i<4;i++){
-      if(!allDirty && !dirtyCells.has(i)) continue;
-      if(!allDirty) clearCell((i%2)*BW, Math.floor(i/2)*BH);
-      drawCell(i, official);
+
+    // 第二批:标题(统一状态)
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000000';
+    ctx.font = FONT_UI_TITLE;
+    ctx.textAlign = 'left';
+    for(const i of cells){
+      const x = (i%2)*BW, y = Math.floor(i/2)*BH;
+      drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
     }
+
+    // 第三批:内容(按颜色分组,减少 fillStyle 切换)
+    ctx.font = FONT_UI_CONTENT;
+    ctx.textAlign = 'center';
+    // 预分配 4 个静态槽位,避免每次 draw 重建数组
+    for(let j=0;j<cells.length;j++){
+      const i = cells[j];
+      const x = (i%2)*BW, y = Math.floor(i/2)*BH;
+      const hasContent = !!String(contents[i]||'').trim();
+      const mode = hasContent ? 'content' : (official ? 'blank' : 'placeholder');
+      const m = CONTENT_MODE[mode];
+      const text = mode === 'placeholder' ? smartPlaceholder()
+                 : mode === 'content'   ? contents[i]
+                 : '';
+      taskSlots[j].color = m.color;
+      taskSlots[j].text = text;
+      taskSlots[j].x = x;
+      taskSlots[j].y = y;
+    }
+    // 按颜色分组绘制,同色一次 fillStyle
+    let lastColor = null;
+    for(let j=0;j<cells.length;j++){
+      const t = taskSlots[j];
+      if(t.color !== lastColor){ ctx.fillStyle = t.color; lastColor = t.color; }
+      if(t.text) drawTextClip(t.text, t.x+BW/2, t.y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
+    }
+
     dirtyCells.clear();
   }
   // measureText 缓存:对象替代 Map,字符串键访问更快;text+size 做 key,文字不变时零测量开销
   const measureCache = Object.create(null);
+  let measureCount = 0;
   function measureAt(t, size, font){
     const key = t + '|' + size;
     const cached = measureCache[key];
     if(cached !== undefined) return cached;
+    // 超过 2000 条清空,防止无限增长(用户长期输入不同字符)
+    if(measureCount > 2000){ for(const k in measureCache){ delete measureCache[k]; } measureCount = 0; }
     // 测量前保存 ctx.font,测完恢复,避免污染渲染状态导致抖动
     const saved = ctx.font;
     ctx.font = font;
     const w = ctx.measureText(t).width;
     ctx.font = saved;
     measureCache[key] = w;
+    measureCount++;
     return w;
   }
   function drawTextClip(text, x, y, maxW, isTitle){
@@ -218,13 +222,14 @@
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
     const origFont = fontOf(weight, origSize);
+    const baseFont = ctx.font;
     // 快速路径:原字号能放下,直接画
     if(measureAt(t, origSize, origFont) <= maxW){
       ctx.font = origFont;
       ctx.fillText(t, x, y);
+      ctx.font = baseFont;
       return;
     }
-    const baseFont = ctx.font;
     const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
     // 二分查找最大能放下的字号(O(log n));fontOf 已全局缓存,无字符串拼接开销
     let lo = minSize, hi = origSize, bestSize = minSize;
@@ -271,7 +276,6 @@
   const selFit = document.getElementById('selFit');
   const selDensity = document.getElementById('selDensity');
   const printSelects = document.getElementById('printSelects');
-  const selOffsetX = document.getElementById('selOffsetX');
 
   const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
 
@@ -590,7 +594,8 @@
   // 初始化单一入口:顺序清晰,每个子函数职责单一
   function init(){
     applyI18n();
-    buildInputs();
+    bindInputs();
+    fillInputs();
     // draw 延迟到 waitForFonts 内,字体加载完再画,避免 fallback 闪烁
     initSteppers();
     waitForFonts();
