@@ -48,11 +48,6 @@
 - 标签发微信后变糊?发送时选「原图」,源文件是高清版,无损。
 - 内容字数多放不下?系统会自动缩小字号适配,超出部分显示省略号。
 
-## 技术信息
-- 纯前端,无后端,数据只存浏览器本地(localStorage)
-- 基于 Web Bluetooth + niimbot-web-bluetooth v2.4
-- 中文字体 PingFang SC / 微软雅黑 / 黑体,英文 Barlow Condensed
-
 ## 反馈
 有需求或问题,请到 GitHub 仓库提 Issue。
 
