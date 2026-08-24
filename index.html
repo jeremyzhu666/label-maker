@@ -69,7 +69,6 @@
   .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:#1a2233;color:#fff;padding:11px 22px;border-radius:10px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99;max-width:85%;text-align:center;font-weight:600;letter-spacing:.4px}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast.err{background:#7f1d1d;letter-spacing:.3px}
-  footer{text-align:center;font-size:10px;color:var(--dim);margin-top:8px;padding:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
 
   @media (max-width:520px){
     body{padding:12px}
@@ -174,13 +173,11 @@
     </div>
   </section>
 
-  <footer>v1.1.0</footer>
   <div class="toast" id="toast"></div>
 
 <script>
 (function(){
   'use strict';
-  const APP_VERSION = '1.1.0';
   const W=800, H=600, BW=W/2, BH=H/2;
   // Condensed 字体 + 正经系统中文字体 fallback(热敏打印笔画不粘连):
   // - 字号保持 44 / 68;字重再-2级(每档-100,共减200):标题 600→400,内容 500→300
