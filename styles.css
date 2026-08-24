@@ -12,24 +12,25 @@
   --text:#1d1d1f;         /* 主文字:近黑(Apple 黑) */
   --text-dim:#86868b;     /* 次要文字:中灰 */
   --text-mute:#aeaeb2;    /* 最弱文字 */
-  --brand:#0071e3;         /* 单点品牌色:仅用于主 CTA 和焦点 */
-  --brand-hover:#0058b0;
+  --brand:#0071e3;         /* 单点品牌色:仅用于焦点 */
   --ok:#34c759;            /* 成功:仅状态点 */
   --warn:#ff9500;          /* 警告:仅状态点 */
   --danger:#ff3b30;       /* 错误:仅状态点 */
 
   /* —— 间距:4px 基线网格 —— */
-  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-8:32px;
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-6:24px; --s-8:32px;
 
   /* —— 字号:5 档阶字 —— */
-  --text-xs:11px; --text-sm:13px; --text-base:15px; --text-lg:17px; --text-xl:22px; --text-2xl:28px;
+  --text-xs:11px; --text-sm:13px; --text-base:15px; --text-xl:22px;
 
   /* —— 圆角:4px 微圆角(专业冷静)—— */
   --radius:4px;
 
+  /* —— 编辑区与预览区等高 —— */
+  --editor-height:250px;
+
   /* —— 字体栈:UI 用纯中文字体,canvas 用 Barlow+中文 fallback —— */
   --font-ui:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','SimHei','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --font-sans:'Barlow Condensed','PingFang SC','Hiragino Sans GB','Microsoft YaHei','SimHei',sans-serif;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -49,12 +50,12 @@ body{
 }
 
 /* —— Header:克制,标题不抢内容焦点 —— */
-header{text-align:center;margin-bottom:var(--s-3);padding:var(--s-1) 0;position:relative}
+header{text-align:center;margin-bottom:var(--s-2);padding:var(--s-1) 0;position:relative}
 header h1{font-size:var(--text-xl);font-weight:600;letter-spacing:-.02em}
 header p{font-size:var(--text-xs);color:var(--text-mute);margin-top:var(--s-1);font-weight:400}
 
 /* —— Footer:与 header 副标题同样式 —— */
-footer{text-align:center;margin-top:var(--s-4);padding:var(--s-2) 0}
+footer{text-align:center;margin-top:var(--s-2);padding:var(--s-2) 0}
 footer p{font-size:var(--text-xs);color:var(--text-mute);font-weight:400}
 
 /* —— 语言切换:右上角克制小按钮 —— */
@@ -91,12 +92,12 @@ footer p{font-size:var(--text-xs);color:var(--text-mute);font-weight:400}
   border-radius:var(--radius);
   padding:var(--s-4);
 }
-/* 编辑区与预览区严格等高:用统一变量,三重保险确保一致 */
-:root{ --editor-height:250px; }
+/* 编辑区与预览区严格等高 */
 .col-main > .step:first-child,
 .preview-section{
   height:var(--editor-height);
   display:flex; flex-direction:column; overflow:hidden;
+  position:relative;
 }
 .col-main > .step:first-child .grid{ flex:1; align-content:center }
 .preview-section .preview-wrap{ flex:1; align-items:center }
@@ -104,15 +105,8 @@ footer p{font-size:var(--text-xs);color:var(--text-mute);font-weight:400}
   display:flex;align-items:center;gap:var(--s-2);
   margin-bottom:var(--s-2);flex-wrap:wrap;
 }
-.step-num{
-  font-size:var(--text-xs);font-weight:600;color:var(--text-dim);
-  letter-spacing:.02em;
-}
 .step-head h2{
   font-size:var(--text-base);font-weight:600;letter-spacing:-.01em;
-}
-.step-head .tip{
-  margin-left:auto;font-size:var(--text-xs);color:var(--text-mute);
 }
 
 /* —— 标签编辑:四宫格,无内边框,靠 gap 分隔 —— */
@@ -128,7 +122,7 @@ label{
   font-weight:500;
   letter-spacing:0;
 }
-input[type=text],input[type=number],select{
+input[type=text]{
   width:100%;
   padding:8px 12px;
   border:1px solid var(--border-strong);
@@ -140,39 +134,21 @@ input[type=text],input[type=number],select{
   background:var(--card);
   transition:border-color .15s;
   letter-spacing:0;
-  -moz-appearance:textfield;
 }
-input[type=text]:focus,input[type=number]:focus,select:focus{
+input[type=text]:focus{
   outline:none;
   border-color:var(--brand);
-}
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-
-/* —— select:去原生箭头,自定义下拉提示,和 input 对齐 —— */
-select{
-  cursor:pointer;
-  -webkit-appearance:none;
-  -moz-appearance:none;
-  appearance:none;
-  /* 右侧留出箭头位置:12px 箭头区 + 12px 原内边距 */
-  padding-right:32px;
-  /* 自定义箭头:用 SVG 内联,与 input 等高对齐 */
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4 L6 8 L10 4' stroke='%2386868b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat:no-repeat;
-  background-position:right 10px center;
-  background-size:12px;
 }
 .title-input{font-weight:500}
 
 /* —— 预览区:右侧 sticky —— */
-.preview-section{position:relative}
 .preview-wrap{display:flex;justify-content:center;padding:var(--s-4) 0}
 canvas{
   width:100%;
   max-width:210px;
   height:auto;
   border:1px solid var(--border);
+  border-radius:var(--radius);
   background:#fff;
   image-rendering:auto;
   opacity:0;
@@ -199,7 +175,6 @@ canvas.ready{opacity:1}
   display:grid;grid-template-columns:1fr 1fr;
   gap:var(--s-3);
 }
-.select-row select{font-size:var(--text-sm)}
 
 /* —— 份数分段控件 —— */
 .stepper{
@@ -247,17 +222,11 @@ canvas.ready{opacity:1}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn:active{background:var(--bg)}
 
-.btn-export{background:var(--brand);color:#fff;border-color:var(--brand)}
-.btn-export:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
-.btn-export:active{background:var(--brand-hover)}
-
 .btn-print{
   background:var(--text);color:#fff;border-color:var(--text);
-  flex:0 0 auto;padding:0 var(--s-5);
+  flex:0 0 auto;padding:0 var(--s-4);
 }
 .btn-print:hover{background:#000;border-color:#000}
-
-.btn-reset{flex:0 0 88px;background:var(--card);color:var(--text-dim)}
 
 .btn-connect{
   flex:1;background:var(--card);color:var(--text);
@@ -267,17 +236,15 @@ canvas.ready{opacity:1}
 .btn-connect:hover{background:var(--bg);border-color:var(--text)}
 .btn-connect:active{background:var(--border)}
 
-.connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-3)}
+.connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-2)}
 .connect-row .btn-print{flex:0 0 auto}
-
-.actions{display:flex;gap:var(--s-2);margin-top:var(--s-4)}
 
 /* —— Toast —— */
 .toast{
   position:fixed;left:50%;bottom:var(--s-8);
   transform:translateX(-50%) translateY(var(--s-2));
   background:var(--text);color:#fff;
-  padding:var(--s-3) var(--s-5);
+  padding:var(--s-3) var(--s-4);
   border-radius:var(--radius);
   font-size:var(--text-sm);font-weight:500;
   opacity:0;transition:opacity .2s,transform .2s;
@@ -290,10 +257,19 @@ canvas.ready{opacity:1}
 /* —— 移动端:单列回退 —— */
 @media (max-width:768px){
   body{padding:var(--s-4);max-width:100%}
-  .layout{grid-template-columns:1fr;gap:var(--s-4)}
-  .col-aside{position:static;order:-1}  /* 移动端预览置顶 */
+  /* display:contents 让子元素提升为 grid 直接子项,可跨容器排序 */
+  .layout{display:grid;grid-template-columns:1fr;gap:var(--s-4)}
+  .col-main{display:contents}
+  .col-aside{display:contents;position:static}
+  .col-main > .step:nth-child(1){order:0}   /* 编辑区 */
+  .preview-section{order:1}                    /* 预览区 */
+  .col-main > .step:nth-child(2){order:2}   /* 打印区 */
+  .col-main > .step:nth-child(3){order:3}   /* 设置区 */
   .grid{grid-template-columns:1fr}
   .select-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
   .btn{height:38px;font-size:var(--text-sm)}
+  /* 移动端解除固定高度,自适应内容 */
+  .col-main > .step:first-child,
+  .preview-section{height:auto;min-height:auto}
 }
