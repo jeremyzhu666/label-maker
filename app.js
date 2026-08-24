@@ -477,8 +477,7 @@
     const hidden = document.getElementById(hiddenId);
     const setVal = (n) => {
       n = Math.max(min, Math.min(max, n|0));
-      const display = (n > 0 && min < 0) ? '+' + n : String(n);
-      valEl.textContent = display;
+      valEl.textContent = n;
       hidden.value = n;
     };
     stepper.addEventListener('click', (e) => {
