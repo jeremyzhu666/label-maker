@@ -173,8 +173,14 @@ canvas{
   border:1px solid var(--border);
 }
 .status-line{
-  display:flex;align-items:center;gap:var(--s-2);
-  margin-bottom:var(--s-3);font-size:var(--text-sm);font-weight:500;
+  display:flex;align-items:center;justify-content:center;gap:var(--s-2);
+  min-height:40px;
+  padding:var(--s-2) var(--s-3);
+  margin-bottom:var(--s-3);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--card);
+  font-size:var(--text-sm);font-weight:500;
 }
 .status-dot{
   width:8px;height:8px;border-radius:50%;
