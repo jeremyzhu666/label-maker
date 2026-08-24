@@ -188,11 +188,11 @@
     if(widthAt(bestSize) <= maxW){
       ctx.fillText(t, x, y);
     } else {
-      while(t.length > 1 && ctx.measureText(t+'…').width <= maxW === false){
+      // 截断:逐字删到"文本+省略号"能放下为止
+      while(t.length > 1 && ctx.measureText(t + '…').width > maxW){
         t = t.slice(0, -1);
-        if(ctx.measureText(t+'…').width <= maxW) break;
       }
-      ctx.fillText(t+'…', x, y);
+      ctx.fillText(t + '…', x, y);
     }
     ctx.font = baseFont;
   }
@@ -437,8 +437,13 @@
       dy = (pc.height - dh)/2;
     }
     // 左右偏移校准:正值整体右移,负值整体左移
-    dx += Number(offsetX) || 0;
-    dy += Number(offsetY) || 0;
+    // clamp 到合理范围,避免偏移过大导致内容完全偏出画布
+    const offX = Number(offsetX) || 0;
+    const offY = Number(offsetY) || 0;
+    const maxX = Math.max(0, (pc.width - dw) / 2);
+    const maxY = Math.max(0, (pc.height - dh) / 2);
+    dx += Math.max(-maxX, Math.min(maxX, offX));
+    dy += Math.max(-maxY, Math.min(maxY, offY));
     pctx.drawImage(canvas, 0, 0, iw, ih, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
     // 二值化(热敏打印机只有黑点/白点,阈值 CONFIG.binarize.threshold)
     // Uint32Array 视图:每像素一次读写,替代逐字节 RGBA 循环,大标签提速 ~35%
@@ -509,6 +514,12 @@
   // 下载 JPG / 清空 功能保留,按钮暂未挂载
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
+
+  // 页面卸载前立即同步写一次 localStorage,防止防抖内数据丢失
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(saveTimer);
+    localStorage.setItem(STORE_KEY, JSON.stringify(titles));
+  });
 
   // 通用 stepper 初始化:支持份数(1-99)与偏移(-99~+99)
   function initStepper(stepperId, valId, hiddenId, min, max){
