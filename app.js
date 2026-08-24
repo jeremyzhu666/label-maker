@@ -36,8 +36,12 @@
   });
 
   const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
-  // 字体字符串拼接单点:weight + size + family,family 改一处即可
-  const fontOf = (weight, size) => weight + ' ' + size + 'px ' + CONFIG.font.family;
+  // fontOf 全局缓存:同一 weight+size 只拼接一次字符串,后续命中缓存
+  const _fontCache = Object.create(null);
+  function fontOf(weight, size){
+    const k = weight + '|' + size;
+    return _fontCache[k] || (_fontCache[k] = weight + ' ' + size + 'px ' + CONFIG.font.family);
+  }
   const FONT_UI_TITLE   = fontOf(CONFIG.font.titleWeight,   CONFIG.font.titleSize);
   const FONT_UI_CONTENT = fontOf(CONFIG.font.contentWeight, CONFIG.font.contentSize);
   const defaultTitles = CONFIG.defaults.titles;
@@ -154,15 +158,15 @@
     }
     dirtyCells.clear();
   }
-  // measureText 缓存:跨格子跨帧复用,text+size 做 key,文字不变时零测量开销
-  const measureCache = new Map();
+  // measureText 缓存:对象替代 Map,字符串键访问更快;text+size 做 key,文字不变时零测量开销
+  const measureCache = Object.create(null);
   function measureAt(t, size, font){
     const key = t + '|' + size;
-    const cached = measureCache.get(key);
+    const cached = measureCache[key];
     if(cached !== undefined) return cached;
     ctx.font = font;
     const w = ctx.measureText(t).width;
-    measureCache.set(key, w);
+    measureCache[key] = w;
     return w;
   }
   function drawTextClip(text, x, y, maxW, isTitle){
@@ -179,17 +183,11 @@
     }
     const baseFont = ctx.font;
     const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
-    // 二分查找最大能放下的字号(O(log n));fontOf 结果缓存避免重复字符串拼接
-    const fontCache = new Map();
-    const fontFor = (size) => {
-      let f = fontCache.get(size);
-      if(!f){ f = fontOf(weight, size); fontCache.set(size, f); }
-      return f;
-    };
+    // 二分查找最大能放下的字号(O(log n));fontOf 已全局缓存,无字符串拼接开销
     let lo = minSize, hi = origSize, bestSize = minSize;
     while(lo <= hi){
       const mid = Math.floor((lo + hi) / 2);
-      if(measureAt(t, mid, fontFor(mid)) <= maxW){
+      if(measureAt(t, mid, fontOf(weight, mid)) <= maxW){
         bestSize = mid;
         lo = mid + 1;
       } else {
@@ -197,7 +195,7 @@
       }
     }
     // bestSize 是二分已验证能放下的最大字号,直接画即可(无需再测)
-    const bestFont = fontFor(bestSize);
+    const bestFont = fontOf(weight, bestSize);
     ctx.font = bestFont;
     if(bestSize > minSize || measureAt(t, bestSize, bestFont) <= maxW){
       ctx.fillText(t, x, y);
@@ -267,15 +265,15 @@
     DISCONNECTING:'disconnecting' // 正在断开
   });
   let state = STATE.UNSUPPORTED;
-  let statusCtx = { text:'', sub:'' };   // 传给 transition 的状态文案
+  let statusCtx = { sub:'' };   // 传给 transition 的上下文(sub/btn 覆盖)
 
-  /* 状态映射:纯数据,描述每状态的 UI 表现(text/sub 由 statusCtx 覆盖) */
+  /* 状态映射:纯数据,描述每状态的 UI 表现(btn/sub 由 statusCtx 覆盖) */
   const STATUS_MAP = {
-    [STATE.UNSUPPORTED]:  { dot:'no',    text:'不支持',        btn:'连接打印机', btnDisabled:true,  printDisabled:true  },
-    [STATE.DISCONNECTED]: { dot:'ready', text:'未连接打印机',  btn:'连接打印机', btnDisabled:false, printDisabled:true  },
-    [STATE.CONNECTING]:   { dot:'ready', text:'连接中…',       btn:'连接中…',   btnDisabled:true,  printDisabled:true  },
-    [STATE.CONNECTED]:    { dot:'ok',    text:'已连接',        btn:'断开连接',   btnDisabled:false, printDisabled:false },
-    [STATE.DISCONNECTING]:{ dot:'ready', text:'断开中…',       btn:'断开中…',   btnDisabled:true,  printDisabled:true  }
+    [STATE.UNSUPPORTED]:  { dot:'no',    btn:'连接打印机', btnDisabled:true,  printDisabled:true  },
+    [STATE.DISCONNECTED]: { dot:'ready', btn:'连接打印机', btnDisabled:false, printDisabled:true  },
+    [STATE.CONNECTING]:   { dot:'ready', btn:'连接中…',   btnDisabled:true,  printDisabled:true  },
+    [STATE.CONNECTED]:    { dot:'ok',    btn:'断开连接',   btnDisabled:false, printDisabled:false },
+    [STATE.DISCONNECTING]:{ dot:'ready', btn:'断开中…',   btnDisabled:true,  printDisabled:true  }
   };
   function renderStatus(){
     const m = STATUS_MAP[state] || STATUS_MAP[STATE.DISCONNECTED];
