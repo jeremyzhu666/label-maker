@@ -36,6 +36,9 @@
   });
 
   const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
+  // 预计算每格坐标,避免 draw 内重复 (i%2)*BW / Math.floor(i/2)*BH
+  const CELL_X = [0, BW, 0, BW];
+  const CELL_Y = [0, 0, BH, BH];
   // fontOf 全局缓存:同一 weight+size 只拼接一次字符串,后续命中缓存
   const _fontCache = Object.create(null);
   function fontOf(weight, size){
@@ -109,6 +112,8 @@
   }
   // 预分配数组,避免每次 draw 创建 [0,1,2,3]
   const ALL_CELLS = [0,1,2,3];
+  // 脏格复用数组(dirtyCells.size < 4 时用),避免 [...dirtyCells] 每次新建
+  const DIRTY_BUF = [0,0,0,0];
   // 收集 HTML 预写的 input 引用 + 绑定事件(只执行一次)
   function bindInputs(){
     const inputs = grid.querySelectorAll('input');
@@ -148,15 +153,24 @@
   const taskSlots = [{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0}];
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
-    const cells = allDirty ? ALL_CELLS : [...dirtyCells];
+    let cells, cellCount;
+    if(allDirty){
+      cells = ALL_CELLS; cellCount = 4;
+    } else {
+      cellCount = dirtyCells.size;
+      let k = 0;
+      for(const i of dirtyCells){ DIRTY_BUF[k++] = i; }
+      cells = DIRTY_BUF;
+    }
 
     // 第一批:清白底
     ctx.fillStyle = '#ffffff';
     if(allDirty){
       ctx.fillRect(0, 0, W, H);
     } else {
-      for(const i of cells){
-        ctx.fillRect((i%2)*BW, Math.floor(i/2)*BH, BW, BH);
+      for(let j=0;j<cellCount;j++){
+        const i = cells[j];
+        ctx.fillRect(CELL_X[i], CELL_Y[i], BW, BH);
       }
     }
 
@@ -165,32 +179,28 @@
     ctx.fillStyle = '#000000';
     ctx.font = FONT_UI_TITLE;
     ctx.textAlign = 'left';
-    for(const i of cells){
-      const x = (i%2)*BW, y = Math.floor(i/2)*BH;
-      drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
+    for(let j=0;j<cellCount;j++){
+      const i = cells[j];
+      drawTextClip(titles[i]||'', CELL_X[i]+CONFIG.layout.padX, CELL_Y[i]+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
     }
 
     // 第三批:内容(按颜色分组,减少 fillStyle 切换)
     ctx.font = FONT_UI_CONTENT;
     ctx.textAlign = 'center';
     // 预分配 4 个静态槽位,避免每次 draw 重建数组
-    for(let j=0;j<cells.length;j++){
+    for(let j=0;j<cellCount;j++){
       const i = cells[j];
-      const x = (i%2)*BW, y = Math.floor(i/2)*BH;
-      const hasContent = !!String(contents[i]||'').trim();
+      const ci = contents[i];
+      const hasContent = ci != null && ci.trim() !== '';
       const mode = hasContent ? 'content' : (official ? 'blank' : 'placeholder');
-      const m = CONTENT_MODE[mode];
-      const text = mode === 'placeholder' ? smartPlaceholder()
-                 : mode === 'content'   ? contents[i]
-                 : '';
-      taskSlots[j].color = m.color;
-      taskSlots[j].text = text;
-      taskSlots[j].x = x;
-      taskSlots[j].y = y;
+      taskSlots[j].color = CONTENT_MODE[mode].color;
+      taskSlots[j].text = hasContent ? ci : (mode === 'placeholder' ? smartPlaceholder() : '');
+      taskSlots[j].x = CELL_X[i];
+      taskSlots[j].y = CELL_Y[i];
     }
     // 按颜色分组绘制,同色一次 fillStyle
     let lastColor = null;
-    for(let j=0;j<cells.length;j++){
+    for(let j=0;j<cellCount;j++){
       const t = taskSlots[j];
       if(t.color !== lastColor){ ctx.fillStyle = t.color; lastColor = t.color; }
       if(t.text) drawTextClip(t.text, t.x+BW/2, t.y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
