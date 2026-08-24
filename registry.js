@@ -49,5 +49,11 @@ window.REGISTRY = {
   }
 };
 
+/* 预计算按 dpi 分组的尺寸索引,免去 populateLabelsForModel 每次遍历过滤 */
+window.REGISTRY._byDpi = {};
+for(const [k,s] of Object.entries(window.REGISTRY.sizes)){
+  (window.REGISTRY._byDpi[s.dpi] = window.REGISTRY._byDpi[s.dpi] || {})[k] = s;
+}
+
 /* model 默认选择 */
 window.DEFAULT_MODEL = 'b1pro';

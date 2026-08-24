@@ -73,7 +73,14 @@
   /* ============ 输入 & 绘制 ============ */
   // rAF 防抖:连续输入时合并到下一帧重绘,避免每次按键都重画 canvas
   let drawScheduled = false;
-  function scheduleDraw(){
+  // 脏区标记:记录哪些格子需要重画。空集合 → 全画(初始化/导出/打印)
+  const dirtyCells = new Set();
+  function scheduleDraw(dirtyIdx){
+    if(dirtyIdx === undefined){
+      dirtyCells.add(0); dirtyCells.add(1); dirtyCells.add(2); dirtyCells.add(3);
+    } else {
+      dirtyCells.add(dirtyIdx);
+    }
     if(drawScheduled) return;
     drawScheduled = true;
     requestAnimationFrame(() => { drawScheduled = false; draw(); });
@@ -119,14 +126,25 @@
       if(peer){ peer.placeholder = smartPlaceholder(titles[i]); }
     }
     else{ contents[i] = e.target.value; }
-    scheduleDraw();
+    scheduleDraw(i);
   }
   function draw(official){
-    ctx.fillStyle='#ffffff';
-    ctx.fillRect(0,0,W,H);
+    // 全画(初始化/导出/打印)或脏区画
+    const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
+    if(allDirty){
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,W,H);
+    }
     for(let i=0;i<4;i++){
+      // 脏区模式:只画 dirtyCells 里的格子
+      if(!allDirty && !dirtyCells.has(i)) continue;
       const col = i%2, row = Math.floor(i/2);
       const x = col*BW, y = row*BH;
+      // 单格重画:先清空该格区域
+      if(!allDirty){
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(x, y, BW, BH);
+      }
       // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
       // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
       // 标题文本:左右内边距 CONFIG.layout.padX
@@ -152,31 +170,40 @@
       ctx.textAlign='center';
       drawTextClip(contentText||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
     }
+    // 画完清空脏区
+    dirtyCells.clear();
+  }
+  // measureText 缓存:跨格子跨帧复用,text+size 做 key,文字不变时零测量开销
+  const measureCache = new Map();
+  function measureAt(t, size, font){
+    const key = t + '|' + size;
+    const cached = measureCache.get(key);
+    if(cached !== undefined) return cached;
+    ctx.font = font;
+    const w = ctx.measureText(t).width;
+    measureCache.set(key, w);
+    return w;
   }
   function drawTextClip(text, x, y, maxW, isTitle){
     let t=String(text);
     if(!t){ return; }
-    // 快速路径:原字号能放下,直接画
-    if(ctx.measureText(t).width <= maxW){ ctx.fillText(t, x, y); return; }
-    const baseFont = ctx.font;
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
-    const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
     const family   = CONFIG.font.family;
-    // 缓存:字号 → 该字号下文本宽度,避免重复 measureText(字体测量开销大)
-    const widthCache = new Map();
-    const widthAt = (size) => {
-      if(widthCache.has(size)) return widthCache.get(size);
-      ctx.font = weight + ' ' + size + 'px ' + family;
-      const w = ctx.measureText(t).width;
-      widthCache.set(size, w);
-      return w;
-    };
+    const origFont = weight + ' ' + origSize + 'px ' + family;
+    // 快速路径:原字号能放下,直接画
+    if(measureAt(t, origSize, origFont) <= maxW){
+      ctx.font = origFont;
+      ctx.fillText(t, x, y);
+      return;
+    }
+    const baseFont = ctx.font;
+    const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
     // 二分查找最大能放下的字号(O(log n))
     let lo = minSize, hi = origSize, bestSize = minSize;
     while(lo <= hi){
       const mid = Math.floor((lo + hi) / 2);
-      if(widthAt(mid) <= maxW){
+      if(measureAt(t, mid, weight + ' ' + mid + 'px ' + family) <= maxW){
         bestSize = mid;
         lo = mid + 1;
       } else {
@@ -184,8 +211,9 @@
       }
     }
     // 用找到的最大字号画;若仍放不下则截断加省略号
-    ctx.font = weight + ' ' + bestSize + 'px ' + family;
-    if(widthAt(bestSize) <= maxW){
+    const bestFont = weight + ' ' + bestSize + 'px ' + family;
+    ctx.font = bestFont;
+    if(measureAt(t, bestSize, bestFont) <= maxW){
       ctx.fillText(t, x, y);
     } else {
       // 截断:逐字删到"文本+省略号"能放下为止
@@ -314,9 +342,9 @@
     const m = REGISTRY.models[modelKey];
     const dpi = m ? m.dpi : 300;
     selLabel.innerHTML = '';
-    const matches = Object.entries(REGISTRY.sizes).filter(([,s]) => s.dpi === dpi);
-    // 如果没有匹配的,显示全部(兜底)
-    const list = matches.length ? matches : Object.entries(REGISTRY.sizes);
+    // 直接取预计算的 dpi 索引,免去遍历过滤;空则兜底全量
+    const byDpi = REGISTRY._byDpi[dpi];
+    const list = byDpi ? Object.entries(byDpi) : Object.entries(REGISTRY.sizes);
     list.forEach(([k, s]) => {
       const o = document.createElement('option');
       o.value = k;
