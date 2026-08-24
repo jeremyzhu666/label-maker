@@ -36,8 +36,10 @@
   });
 
   const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
-  const FONT_UI_TITLE   = CONFIG.font.titleWeight   + ' ' + CONFIG.font.titleSize   + 'px ' + CONFIG.font.family;
-  const FONT_UI_CONTENT = CONFIG.font.contentWeight + ' ' + CONFIG.font.contentSize + 'px ' + CONFIG.font.family;
+  // 字体字符串拼接单点:weight + size + family,family 改一处即可
+  const fontOf = (weight, size) => weight + ' ' + size + 'px ' + CONFIG.font.family;
+  const FONT_UI_TITLE   = fontOf(CONFIG.font.titleWeight,   CONFIG.font.titleSize);
+  const FONT_UI_CONTENT = fontOf(CONFIG.font.contentWeight, CONFIG.font.contentSize);
   const defaultTitles = CONFIG.defaults.titles;
   // placeholder 统一为默认提示
   function smartPlaceholder(){ return '编辑模板'; }
@@ -49,6 +51,9 @@
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const toastEl = document.getElementById('toast');
+  // input 引用数组:buildInputs 创建时保存,onInput 直接取引用,避免 querySelector 脆弱查询
+  const titleInputs = [];
+  const contentInputs = [];
 
   /* ============ 输入 & 绘制 ============ */
   // rAF 防抖:连续输入时合并到下一帧重绘,避免每次按键都重画 canvas
@@ -94,6 +99,9 @@
       g.appendChild(titleInp);
       g.appendChild(contentInp);
       grid.appendChild(g);
+      // 保存引用,onInput 直接取,避免 querySelector
+      titleInputs[i] = titleInp;
+      contentInputs[i] = contentInp;
     }
   }
   function onInput(e){
@@ -101,8 +109,7 @@
     if(e.target.dataset.type==='t'){
       titles[i] = e.target.value;
       // 标题变化 → 同步更新同格的第二行 placeholder
-      const peer = grid.querySelector('input[data-type="c"][data-i="'+i+'"]');
-      if(peer){ peer.placeholder = smartPlaceholder(); }
+      contentInputs[i].placeholder = smartPlaceholder();
     }
     else{ contents[i] = e.target.value; }
     scheduleDraw(i);
@@ -163,8 +170,7 @@
     if(!t){ return; }
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
-    const family   = CONFIG.font.family;
-    const origFont = weight + ' ' + origSize + 'px ' + family;
+    const origFont = fontOf(weight, origSize);
     // 快速路径:原字号能放下,直接画
     if(measureAt(t, origSize, origFont) <= maxW){
       ctx.font = origFont;
@@ -177,7 +183,7 @@
     let lo = minSize, hi = origSize, bestSize = minSize;
     while(lo <= hi){
       const mid = Math.floor((lo + hi) / 2);
-      if(measureAt(t, mid, weight + ' ' + mid + 'px ' + family) <= maxW){
+      if(measureAt(t, mid, fontOf(weight, mid)) <= maxW){
         bestSize = mid;
         lo = mid + 1;
       } else {
@@ -185,7 +191,7 @@
       }
     }
     // 用找到的最大字号画;若仍放不下则截断加省略号
-    const bestFont = weight + ' ' + bestSize + 'px ' + family;
+    const bestFont = fontOf(weight, bestSize);
     ctx.font = bestFont;
     if(measureAt(t, bestSize, bestFont) <= maxW){
       ctx.fillText(t, x, y);
@@ -534,37 +540,42 @@
     });
     setVal(parseInt(hidden.value||String(cfg.def), 10));
   }
-  initStepper('densityStepper', 'densityVal', 'selDensity', CONFIG.stepper.density);
-  initStepper('copiesStepper',  'copiesVal',  'copies',     CONFIG.stepper.copies);
-  initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
-  initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
-
-  buildInputs();
-  draw();
-  // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)
-  // 字体加载成功 → 重绘;失败 → 2 秒后兜底重绘(替代原无条件 setTimeout)
-  if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-    document.fonts.ready.then(() => { draw(); }).catch(() => {
-      setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
-    });
-  } else {
-    // 不支持 document.fonts 的老环境,2 秒后兜底重绘
-    setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+  function initSteppers(){
+    initStepper('densityStepper', 'densityVal', 'selDensity', CONFIG.stepper.density);
+    initStepper('copiesStepper',  'copiesVal',  'copies',     CONFIG.stepper.copies);
+    initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
+    initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
   }
-
-  // 等待 niimbot.js 加载完成后再检测
-  // defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
-  function waitForNiimbot(){
+  // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)
+  function waitForFonts(){
+    if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
+      document.fonts.ready.then(() => { draw(); }).catch(() => {
+        setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+      });
+    } else {
+      // 不支持 document.fonts 的老环境,2 秒后兜底重绘
+      setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+    }
+  }
+  // 蓝牙支持检测:defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
+  function detectBluetoothSupport(){
     if(typeof window.Niimbot !== 'undefined' && typeof window.Niimbot.isSupported === 'function'){
       detectSupport();
       return;
     }
-    // CDN 失败兜底:等 load 事件后再试一次,仍不存在则给出失败状态
     if(document.readyState === 'complete'){
       detectSupport();
     } else {
       window.addEventListener('load', () => detectSupport(), { once: true });
     }
   }
-  waitForNiimbot();
+  // 初始化单一入口:顺序清晰,每个子函数职责单一
+  function init(){
+    buildInputs();
+    draw();
+    initSteppers();
+    waitForFonts();
+    detectBluetoothSupport();
+  }
+  init();
 })();
