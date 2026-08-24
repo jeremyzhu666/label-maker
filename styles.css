@@ -172,7 +172,6 @@ canvas{
   background:var(--bg);
   border:1px solid var(--border);
 }
-.print-box.connected{background:#f0fdf4;border-color:#bbf7d0}
 .status-line{
   display:flex;align-items:center;gap:var(--s-2);
   margin-bottom:var(--s-3);font-size:var(--text-sm);font-weight:500;

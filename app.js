@@ -265,11 +265,11 @@
 
   /* 状态映射:纯数据,描述每状态的 UI 表现(text/sub 由 statusCtx 覆盖) */
   const STATUS_MAP = {
-    [STATE.UNSUPPORTED]:  { dot:'no',    text:'不支持',        btn:'连接打印机', btnDisabled:true,  printDisabled:true,  box:false },
-    [STATE.DISCONNECTED]: { dot:'ready', text:'未连接打印机',  btn:'连接打印机', btnDisabled:false, printDisabled:true,  box:false },
-    [STATE.CONNECTING]:   { dot:'ready', text:'连接中…',       btn:'连接中…',   btnDisabled:true,  printDisabled:true,  box:false },
-    [STATE.CONNECTED]:    { dot:'ok',    text:'已连接',        btn:'断开连接',   btnDisabled:false, printDisabled:false, box:true  },
-    [STATE.DISCONNECTING]:{ dot:'ready', text:'断开中…',       btn:'断开中…',   btnDisabled:true,  printDisabled:true,  box:true  }
+    [STATE.UNSUPPORTED]:  { dot:'no',    text:'不支持',        btn:'连接打印机', btnDisabled:true,  printDisabled:true  },
+    [STATE.DISCONNECTED]: { dot:'ready', text:'未连接打印机',  btn:'连接打印机', btnDisabled:false, printDisabled:true  },
+    [STATE.CONNECTING]:   { dot:'ready', text:'连接中…',       btn:'连接中…',   btnDisabled:true,  printDisabled:true  },
+    [STATE.CONNECTED]:    { dot:'ok',    text:'已连接',        btn:'断开连接',   btnDisabled:false, printDisabled:false },
+    [STATE.DISCONNECTING]:{ dot:'ready', text:'断开中…',       btn:'断开中…',   btnDisabled:true,  printDisabled:true  }
   };
   function renderStatus(){
     const m = STATUS_MAP[state] || STATUS_MAP[STATE.DISCONNECTED];
@@ -280,7 +280,6 @@
     btnConnect.textContent = m.btn;
     btnConnect.disabled = m.btnDisabled;
     btnPrint.disabled = m.printDisabled;
-    printBox.classList.toggle('connected', m.box);
   }
 
   // 唯一的状态切换入口。newSub/newText 可选,缺省时由状态推导默认文案
@@ -351,9 +350,7 @@
     printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
     populateModels();
     populateLabelsForModel(DEFAULT_MODEL);
-    transition(STATE.DISCONNECTED, {
-      sub:'先选择型号和标签纸，再点下方按钮配对你的精臣打印机'
-    });
+    transition(STATE.DISCONNECTED, { sub:'' });
     return true;
   }
 
@@ -385,7 +382,7 @@
       const isCancel = /cancel|取消|aborted|user.*cancel|chooser.*closed/i.test(rawMsg);
       if(isCancel){
         // 用户主动取消 → 完全回到初始未连接状态
-        transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点「连接」' });
+        transition(STATE.DISCONNECTED, { sub:'' });
         showToast('已取消连接');
       }else{
         // 真实失败:状态点置红,但仍处于 DISCONNECTED(按钮可重试)
@@ -399,7 +396,7 @@
     transition(STATE.DISCONNECTING, { text:'断开中…' });
     try{ if(BT) await BT.disconnect(); }catch(e){}
     lastIdentifyInfo = null;
-    transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点「连接」' });
+    transition(STATE.DISCONNECTED, { sub:'' });
     showToast('已断开');
   }
 
