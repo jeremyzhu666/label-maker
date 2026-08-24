@@ -22,7 +22,6 @@
       contentMaxPadX:58                          //   内容最大宽度 padding
     },
     binarize: { threshold:210 },                // 二值化阈值(热敏打印:0.299R+0.587G+0.114B < 210 → 黑)
-    storage: { key:'tpl_titles_v3' },           // localStorage 键名
     input: {                                      // 输入框长度限制
       maxTitleLen:12,                              //   标题最大字符数
       maxContentLen:16                            //   内容最大字符数
@@ -33,36 +32,11 @@
   const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
   const FONT_UI_TITLE   = CONFIG.font.titleWeight   + ' ' + CONFIG.font.titleSize   + 'px ' + CONFIG.font.family;
   const FONT_UI_CONTENT = CONFIG.font.contentWeight + ' ' + CONFIG.font.contentSize + 'px ' + CONFIG.font.family;
-  const STORE_KEY = CONFIG.storage.key;
   const defaultTitles = CONFIG.defaults.titles;
-  // 根据第一行模板项智能生成第二行 placeholder
-  function smartPlaceholder(title){
-    const t = (title||'').trim();
-    if(/日期|时间|生产日期|采购日期|入库日期|打印日期|update|date|time/i.test(t)) return 'YYMMDD';
-    if(/编号|编码|编码号|型号|料号|序号|代码|sku|sn|code|no|编号/i.test(t)) return 'A01';
-    if(/名称|品名|物品名|品名规格|物品|product|item|name/i.test(t)) return 'Apple';
-    if(/规格|尺寸|大小|spec|size/i.test(t)) return '50×30mm';
-    if(/数量|个数|件数|qty/i.test(t)) return '120';
-    if(/价格|单价|金额|售价|price|cost/i.test(t)) return '¥299';
-    if(/位置|库位|存放|仓位|货架|location|rack|shelf/i.test(t)) return 'A-03-02';
-    if(/备注|说明|note|remark|comment|memo/i.test(t)) return 'Notes';
-    if(/自定义|custom/i.test(t)) return 'Custom';
-    if(/负责人|经手|操作者|owner|staff|user/i.test(t)) return 'User';
-    return '编辑模板';
-  }
-  function loadTitles(){
-    try{ const s=JSON.parse(localStorage.getItem(STORE_KEY)); if(Array.isArray(s)&&s.length===4) return s; }catch(e){}
-    return defaultTitles.slice();
-  }
-  // saveTitles 防抖:连续输入只在停顿后写一次,避免每个按键都同步写 localStorage
-  let saveTimer;
-  function saveTitles(){
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      localStorage.setItem(STORE_KEY, JSON.stringify(titles));
-    }, 500);
-  }
-  let titles = loadTitles();
+  // placeholder 统一为默认提示
+  function smartPlaceholder(){ return '编辑模板'; }
+  // 无保存功能:每次刷新回到默认状态
+  let titles = defaultTitles.slice();
   let contents = ['','','',''];
 
   const grid = document.getElementById('inputGrid');
@@ -120,10 +94,9 @@
     const i = +e.target.dataset.i;
     if(e.target.dataset.type==='t'){
       titles[i] = e.target.value;
-      saveTitles();
       // 标题变化 → 同步更新同格的第二行 placeholder
       const peer = grid.querySelector('input[data-type="c"][data-i="'+i+'"]');
-      if(peer){ peer.placeholder = smartPlaceholder(titles[i]); }
+      if(peer){ peer.placeholder = smartPlaceholder(); }
     }
     else{ contents[i] = e.target.value; }
     scheduleDraw(i);
@@ -531,12 +504,6 @@
   // 下载 JPG / 清空 功能保留,按钮暂未挂载
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
-
-  // 页面卸载前立即同步写一次 localStorage,防止防抖内数据丢失
-  window.addEventListener('beforeunload', () => {
-    clearTimeout(saveTimer);
-    localStorage.setItem(STORE_KEY, JSON.stringify(titles));
-  });
 
   // 通用 stepper 初始化:支持份数(1-99)与偏移(-99~+99)
   function initStepper(stepperId, valId, hiddenId, min, max){
