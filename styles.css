@@ -70,6 +70,11 @@ header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);fo
   border-radius:var(--radius);
   padding:var(--s-5);
 }
+/* 编辑区与预览区等高 */
+.col-main > .step:first-child,
+.preview-section{ min-height:380px; display:flex; flex-direction:column }
+.col-main > .step:first-child .grid{ flex:1; align-content:center }
+.preview-section .preview-wrap{ flex:1; align-items:center }
 .step-head{
   display:flex;align-items:center;gap:var(--s-2);
   margin-bottom:var(--s-4);flex-wrap:wrap;
@@ -139,14 +144,6 @@ canvas{
   border-radius:var(--radius);
   background:#fff;
   image-rendering:auto;
-}
-.preview-meta{
-  text-align:center;
-  font-size:var(--text-xs);
-  color:var(--text-mute);
-  margin-top:var(--s-2);
-  font-weight:400;
-  letter-spacing:0;
 }
 
 /* —— 打印区 —— */
