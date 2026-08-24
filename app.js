@@ -497,6 +497,24 @@
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
 
+  // 份数分段控件
+  const copiesStepper = document.getElementById('copiesStepper');
+  if(copiesStepper){
+    const valEl = document.getElementById('copiesVal');
+    const hidden = document.getElementById('copies');
+    const setVal = (n) => {
+      n = Math.max(1, Math.min(99, n|0));
+      valEl.textContent = n;
+      hidden.value = n;
+    };
+    copiesStepper.addEventListener('click', (e) => {
+      const btn = e.target.closest('.stepper-btn');
+      if(!btn) return;
+      const cur = parseInt(hidden.value||'1', 10);
+      setVal(btn.dataset.act === 'inc' ? cur + 1 : cur - 1);
+    });
+  }
+
   buildInputs();
   draw();
   // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)

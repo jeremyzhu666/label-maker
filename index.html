@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker 标签生成工具</title>
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <!-- Barlow Condensed 只给 canvas 打印用,异步加载不阻塞首屏 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css" media="print" onload="this.media='all'">
@@ -66,7 +66,12 @@
           </div>
           <div>
             <label>份数</label>
-            <input id="copies" type="number" min="1" max="99" value="1">
+            <div class="stepper" id="copiesStepper">
+              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <span class="stepper-val" id="copiesVal">1</span>
+              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+            </div>
+            <input id="copies" type="hidden" value="1">
           </div>
           <div>
             <label>左右偏移</label>

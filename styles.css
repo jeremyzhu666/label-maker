@@ -177,8 +177,37 @@ canvas{
 }
 .select-row select{font-size:var(--text-sm)}
 
+/* —— 份数分段控件 —— */
+.stepper{
+  display:flex;align-items:center;
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius);
+  height:40px;
+  overflow:hidden;
+  background:var(--card);
+}
+.stepper-btn{
+  width:36px;height:100%;
+  border:none;border-radius:0;
+  background:var(--card);color:var(--text-dim);
+  font-size:18px;font-weight:400;
+  cursor:pointer;flex-shrink:0;
+  display:grid;place-items:center;
+}
+.stepper-btn:hover{background:var(--bg);color:var(--text)}
+.stepper-btn:active{background:var(--border)}
+.stepper-val{
+  flex:1;text-align:center;
+  font-size:var(--text-sm);font-weight:500;
+  color:var(--text);
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+  height:100%;
+  display:grid;place-items:center;
+}
+
 /* —— 按钮:首字母大写,字距正常,扁平无阴影 —— */
-button{
+button:not(.stepper-btn){
   flex:1;
   height:40px;
   padding:0 var(--s-4);
@@ -193,8 +222,8 @@ button{
   background:var(--card);
   color:var(--text);
 }
-button:disabled{opacity:.4;cursor:not-allowed}
-button:active{background:var(--bg)}
+button:not(.stepper-btn):disabled{opacity:.4;cursor:not-allowed}
+button:not(.stepper-btn):active{background:var(--bg)}
 
 .btn-export{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn-export:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
