@@ -112,15 +112,14 @@
   const ALL_CELLS = [0,1,2,3];
   // 脏格复用数组(dirtyCells.size < 4 时用),避免 [...dirtyCells] 每次新建
   const DIRTY_BUF = [0,0,0,0];
-  // 收集 HTML 预写的 input 引用 + 绑定事件(只执行一次)
+  // 事件委托:1 个监听器替代 8 个,减少内存和初始化开销
   function bindInputs(){
     const inputs = grid.querySelectorAll('input');
     for(let i=0;i<4;i++){
       titleInputs[i] = inputs[i*2];
       contentInputs[i] = inputs[i*2+1];
-      titleInputs[i].addEventListener('input', onInput);
-      contentInputs[i].addEventListener('input', onInput);
     }
+    grid.addEventListener('input', onInput);
   }
   // 同步 placeholder(语言切换时调用)
   function fillInputs(){
@@ -204,21 +203,30 @@
 
     dirtyCells.clear();
   }
-  // measureText 缓存:对象替代 Map,字符串键访问更快;text+size 做 key,文字不变时零测量开销
+  // measureText 缓存:两级对象,避免每次 t+'|'+size 字符串拼接
+  // measureCache[size][text] = width,命中时零拼接开销
   const measureCache = Object.create(null);
   let measureCount = 0;
   function measureAt(t, size, font){
-    const key = t + '|' + size;
-    const cached = measureCache[key];
-    if(cached !== undefined) return cached;
-    // 超过 2000 条清空,防止无限增长(用户长期输入不同字符)
-    if(measureCount > 2000){ for(const k in measureCache){ delete measureCache[k]; } measureCount = 0; }
+    let bySize = measureCache[size];
+    if(bySize){
+      const cached = bySize[t];
+      if(cached !== undefined) return cached;
+    } else {
+      bySize = measureCache[size] = Object.create(null);
+    }
+    // 超过 2000 条清空,防止无限增长
+    if(measureCount > 2000){
+      for(const k in measureCache){ delete measureCache[k]; }
+      measureCount = 0;
+      bySize = measureCache[size] = Object.create(null);
+    }
     // 测量前保存 ctx.font,测完恢复,避免污染渲染状态导致抖动
     const saved = ctx.font;
     ctx.font = font;
     const w = ctx.measureText(t).width;
     ctx.font = saved;
-    measureCache[key] = w;
+    bySize[t] = w;
     measureCount++;
     return w;
   }
