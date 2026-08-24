@@ -171,7 +171,10 @@ canvas{
   border:1px solid var(--border);
   background:#fff;
   image-rendering:auto;
+  opacity:0;
+  transition:opacity .15s;
 }
+canvas.ready{opacity:1}
 
 /* —— 打印区:状态点集成进按钮 —— */
 .print-box{ margin-top:0; padding:0; border:none; background:transparent; border-radius:0; }

@@ -134,7 +134,7 @@
       contentInp.dataset.type = 'c';
       contentInp.dataset.i = i;
       contentInp.value = contents[i];
-      contentInp.placeholder = smartPlaceholder(titles[i]);
+      contentInp.placeholder = smartPlaceholder();
       contentInp.maxLength = CONFIG.input.maxContentLen;
       contentInp.addEventListener('input', onInput);
 
@@ -251,24 +251,6 @@
     }
     ctx.font = baseFont;
   }
-  function exportJPG(){
-    draw(true);
-    canvas.toBlob(function(blob){
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'template_'+Date.now()+'.jpg';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 1000);
-      showToast('已导出 JPG');
-    }, 'image/jpeg', 0.95);
-  }
-  function clearContents(){
-    contents = ['','','',''];
-    buildInputs();
-    draw();
-    showToast('已清空输入');
-  }
   let toastTimer;
   function showToast(msg, err){
     toastEl.textContent = msg;
@@ -289,12 +271,9 @@
   const selFit = document.getElementById('selFit');
   const selDensity = document.getElementById('selDensity');
   const printSelects = document.getElementById('printSelects');
-  const copiesInp = document.getElementById('copies');
   const selOffsetX = document.getElementById('selOffsetX');
-  const printBox = document.getElementById('printBox');
 
   const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
-  let lastIdentifyInfo = null;
 
   /* ---------- 状态机 ----------
      单一状态源,所有 UI 由 transition() 集中同步,业务层只读写 state。
@@ -405,7 +384,6 @@
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
       const allPrefixes = [...new Set(Object.values(REGISTRY.models).flatMap(m => m.name_prefixes || []))];
       const info = await BT.identify({ ...modelHint, name_prefixes: allPrefixes });
-      lastIdentifyInfo = info;
       // 根据返回的 modelId 自动匹配正确型号
       const matchedKey = Object.keys(REGISTRY.models).find(k => REGISTRY.models[k].id === info.modelId);
       if(matchedKey && matchedKey !== selModel.value){
@@ -435,7 +413,6 @@
   async function doDisconnect(){
     transition(STATE.DISCONNECTING, { sub:'' });
     try{ if(BT) await BT.disconnect(); }catch(e){}
-    lastIdentifyInfo = null;
     transition(STATE.DISCONNECTED, { sub:'' });
     showToast(S.toast.disconnected);
   }
@@ -549,7 +526,6 @@
   });
 
   /* ============ 初始化 ============ */
-  // 下载 JPG / 清空 功能保留,按钮暂未挂载
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
   // 语言切换:事件委托,新增语言按钮自动支持
@@ -587,15 +563,16 @@
     initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
     initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
   }
-  // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)
+  // Barlow Condensed 异步加载:加载完才显示 canvas,避免用户看到 fallback 字体闪烁
   function waitForFonts(){
+    const show = () => { draw(); canvas.classList.add('ready'); };
     if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-      document.fonts.ready.then(() => { draw(); }).catch(() => {
-        setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+      document.fonts.ready.then(show).catch(() => {
+        setTimeout(()=>{ try{ show(); }catch(e){} }, 2000);
       });
     } else {
-      // 不支持 document.fonts 的老环境,2 秒后兜底重绘
-      setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+      // 不支持 document.fonts 的老环境,2 秒后兜底
+      setTimeout(()=>{ try{ show(); }catch(e){} }, 2000);
     }
   }
   // 蓝牙支持检测:defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
@@ -614,7 +591,7 @@
   function init(){
     applyI18n();
     buildInputs();
-    draw();
+    // draw 延迟到 waitForFonts 内,字体加载完再画,避免 fallback 闪烁
     initSteppers();
     waitForFonts();
     detectBluetoothSupport();
