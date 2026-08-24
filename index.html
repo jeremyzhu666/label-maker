@@ -109,8 +109,9 @@
 
   <div class="toast" id="toast"></div>
 
-<!-- niimbot.js + app.js 都加 defer:DOM 解析后按顺序执行,niimbot 先加载 app.js 再跑 -->
+<!-- niimbot.js + registry.js + app.js 都加 defer:DOM 解析后按顺序执行 -->
 <script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js" defer></script>
+<script src="registry.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>
