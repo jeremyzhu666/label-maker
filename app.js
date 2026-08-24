@@ -569,6 +569,7 @@
     // 初始化显示(偏移 0 显示为 0,非 +0)
     setVal(parseInt(hidden.value||'0', 10));
   }
+  initStepper('densityStepper', 'densityVal', 'selDensity', 1, 5);
   initStepper('copiesStepper',  'copiesVal',  'copies',     1, 99);
   initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', -99, 99);
   initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', -99, 99);

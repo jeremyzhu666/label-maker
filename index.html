@@ -56,13 +56,12 @@
         <div class="select-row">
           <div>
             <label>打印浓度</label>
-            <select id="selDensity">
-              <option value="1">1 · 淡</option>
-              <option value="2">2</option>
-              <option value="3" selected>3 · 默认</option>
-              <option value="4">4</option>
-              <option value="5">5 · 深</option>
-            </select>
+            <div class="stepper" id="densityStepper">
+              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <span class="stepper-val" id="densityVal">3</span>
+              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+            </div>
+            <input id="selDensity" type="hidden" value="3">
           </div>
           <div>
             <label>份数</label>
