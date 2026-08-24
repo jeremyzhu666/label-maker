@@ -326,8 +326,8 @@
     btnLabel.textContent = statusCtx.btn || t(m.btnKey);
     btnConnect.disabled = statusCtx.btnDisabled !== undefined ? statusCtx.btnDisabled : m.btnDisabled;
     btnPrint.disabled = m.printDisabled;
-    // caption:上下文详情(设备名/进度/错误),无内容时隐藏
-    statusSub.textContent = statusCtx.sub || '';
+    // caption:优先用 subKey(随语言切换刷新),否则用已解析的 sub(动态消息)
+    statusSub.textContent = statusCtx.subKey ? t(statusCtx.subKey) : (statusCtx.sub || '');
   }
 
   // 唯一的状态切换入口。newSub/newText 可选,缺省时由状态推导默认文案
@@ -382,13 +382,11 @@
     const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
-      printSelects.hidden = true;
-      transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedDriver });
+      transition(STATE.UNSUPPORTED, { subKey:'status.unsupportedDriver' });
       return false;
     }
     if(!WB || !BT.isSupported()){
-      printSelects.hidden = true;
-      transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedBT });
+      transition(STATE.UNSUPPORTED, { subKey:'status.unsupportedBT' });
       return false;
     }
     populateModels();

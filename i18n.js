@@ -35,8 +35,8 @@ window.I18N = {
       increase: '增加'
     },
     status: {
-      unsupportedDriver: 'Niimbot 驱动加载失败 · CDN 脚本未加载,请检查网络或关闭广告拦截后刷新',
-      unsupportedBT: '浏览器不支持 Web Bluetooth · 请在 Chrome / Edge 桌面或安卓版中打开(iOS 可尝试 Bluefy 浏览器)',
+      unsupportedDriver: 'Niimbot 驱动加载失败,请检查网络或关闭广告拦截后刷新',
+      unsupportedBT: '当前浏览器不支持 Web 蓝牙,iOS 请使用 Bluefy 浏览器',
       selectDevice: '请在浏览器弹窗中选择设备',
       connected: function(dev, extra){ return '已连接:' + dev + ' · ' + extra; },
       modelSwitched: function(label){ return '已切换型号:' + label; },
@@ -96,8 +96,8 @@ window.I18N = {
       increase: 'Increase'
     },
     status: {
-      unsupportedDriver: 'Niimbot driver failed to load · CDN script missing, check network or disable ad blocker and refresh',
-      unsupportedBT: 'Web Bluetooth not supported · Open in Chrome / Edge desktop or Android (iOS: try Bluefy browser)',
+      unsupportedDriver: 'Niimbot driver failed to load, check network or disable ad blocker and refresh',
+      unsupportedBT: 'Current browser does not support Web Bluetooth, iOS users please use Bluefy browser',
       selectDevice: 'Select a device in the browser popup',
       connected: function(dev, extra){ return 'Connected: ' + dev + ' · ' + extra; },
       modelSwitched: function(label){ return 'Model switched: ' + label; },
