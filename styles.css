@@ -53,15 +53,15 @@ header{text-align:center;margin-bottom:var(--s-4);padding:var(--s-2) 0}
 header h1{font-size:var(--text-2xl);font-weight:600;letter-spacing:-.02em}
 header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);font-weight:400}
 
-/* —— 双栏布局:桌面左编辑右预览 —— */
+/* —— 双栏布局:桌面左编辑右预览,上边沿严格对齐 —— */
 .layout{
   display:grid;
   grid-template-columns:1fr 360px;
   gap:var(--s-6);
-  align-items:start;
+  align-items:stretch;
 }
 .col-main{display:flex;flex-direction:column;gap:var(--s-6)}
-.col-aside{position:sticky;top:var(--s-6)}
+.col-aside{position:sticky;top:0}
 
 /* —— 卡片:无阴影,靠边框 —— */
 .step{
