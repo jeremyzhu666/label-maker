@@ -163,11 +163,13 @@
   function drawCell(i, official){
     const col = i%2, row = Math.floor(i/2);
     const x = col*BW, y = row*BH;
+    // 每帧重置所有 ctx 状态,避免上一帧残留导致抖动
+    ctx.textBaseline = 'middle';
     // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
     // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
     ctx.fillStyle='#000000';
     ctx.font = FONT_UI_TITLE;
-    ctx.textBaseline='middle'; ctx.textAlign='left';
+    ctx.textAlign='left';
     drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
     // 内容区:有内容画黑色;预览空内容画灰色占位提示;正式导出/打印时空内容留白
     const hasContent = !!String(contents[i]||'').trim();
@@ -202,8 +204,11 @@
     const key = t + '|' + size;
     const cached = measureCache[key];
     if(cached !== undefined) return cached;
+    // 测量前保存 ctx.font,测完恢复,避免污染渲染状态导致抖动
+    const saved = ctx.font;
     ctx.font = font;
     const w = ctx.measureText(t).width;
+    ctx.font = saved;
     measureCache[key] = w;
     return w;
   }
