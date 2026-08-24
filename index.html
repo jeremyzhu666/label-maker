@@ -342,8 +342,57 @@
   const printBox = document.getElementById('printBox');
 
   const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
-  let isConnected = false;
   let lastIdentifyInfo = null;
+
+  /* ---------- 状态机 ----------
+     单一状态源,所有 UI 由 transition() 集中同步,业务层只读写 state。
+     消除原先 isConnected / 按钮文字 / disabled / classList 四处手动同步的脆弱写法。
+  */
+  const STATE = Object.freeze({
+    UNSUPPORTED: 'unsupported',   // 浏览器/驱动不可用
+    DISCONNECTED: 'disconnected', // 初始未连接
+    CONNECTING:   'connecting',   // 正在弹出设备选择 / 识别中
+    CONNECTED:    'connected',    // 已连接,可打印
+    DISCONNECTING:'disconnecting' // 正在断开
+  });
+  let state = STATE.UNSUPPORTED;
+  let statusCtx = { text:'', sub:'' };   // 传给 transition 的状态文案
+
+  function renderStatus(){
+    const map = {
+      [STATE.UNSUPPORTED]:  { dot:'no',   text: statusCtx.text || '不支持',          sub: statusCtx.sub, btn:'连接打印机', btnDisabled:true,  printDisabled:true,  box:false },
+      [STATE.DISCONNECTED]: { dot:'ready', text: statusCtx.text || '未连接打印机',    sub: statusCtx.sub, btn:'连接打印机', btnDisabled:false, printDisabled:true,  box:false },
+      [STATE.CONNECTING]:   { dot:'ready', text: statusCtx.text || '连接中…',         sub: statusCtx.sub, btn:'连接中…',    btnDisabled:true,  printDisabled:true,  box:false },
+      [STATE.CONNECTED]:    { dot:'ok',    text: statusCtx.text || '已连接',          sub: statusCtx.sub, btn:'断开连接',   btnDisabled:false, printDisabled:false, box:true  },
+      [STATE.DISCONNECTING]:{ dot:'ready', text: statusCtx.text || '断开中…',         sub: statusCtx.sub, btn:'断开中…',    btnDisabled:true,  printDisabled:true,  box:true  }
+    };
+    const m = map[state] || map[STATE.DISCONNECTED];
+    // 状态点
+    statusDot.className = 'status-dot ' + m.dot;
+    // 状态文字:保留子元素 statusSub 结构,只替换文本节点,避免 innerHTML 重建丢失引用
+    const first = statusText.firstChild;
+    if(first && first.nodeType === 3){ first.nodeValue = m.text; }
+    else {
+      statusText.textContent = m.text;
+      const s = document.createElement('div');
+      s.className = 'status-sub'; s.id = 'statusSub';
+      statusText.appendChild(s);
+    }
+    const subEl = document.getElementById('statusSub');
+    if(subEl){ subEl.textContent = m.sub || ''; }
+    // 按钮 + 打印按钮 + 容器
+    btnConnect.textContent = m.btn;
+    btnConnect.disabled = m.btnDisabled;
+    btnPrint.disabled = m.printDisabled;
+    printBox.classList.toggle('connected', m.box);
+  }
+
+  // 唯一的状态切换入口。newSub/newText 可选,缺省时由状态推导默认文案
+  function transition(newState, ctx){
+    state = newState;
+    statusCtx = ctx || {};
+    renderStatus();
+  }
 
   /* ---------- registry: niimbot-web-bluetooth@2.4.0 registry.json ----------
      model 必须带 id/dpi/task/protocol,size 必须带 w_px/h_px/dpi/code,
@@ -396,39 +445,6 @@
   // model 默认选择
   const DEFAULT_MODEL = 'b1pro';
 
-  function setStatus(dotCls, text, sub){
-    statusDot.className = 'status-dot ' + (dotCls||'');
-    const first = statusText.firstChild;
-    if(first && first.nodeType === 3){
-      first.nodeValue = text;
-    } else {
-      statusText.innerHTML = '';
-      statusText.appendChild(document.createTextNode(text));
-      // 重建 statusSub 容器
-      const s = document.createElement('div');
-      s.className = 'status-sub';
-      s.id = 'statusSub';
-      statusText.appendChild(s);
-      // 同步外部引用
-      window.__syncStatusSub && window.__syncStatusSub();
-    }
-    const subEl = document.getElementById('statusSub');
-    if(subEl){ subEl.textContent = sub||''; }
-  }
-  function setStatusHTML(dotCls, html, sub){
-    statusDot.className = 'status-dot ' + (dotCls||'');
-    statusText.innerHTML = html;
-    // 追加 statusSub
-    if(!document.getElementById('statusSub')){
-      const s = document.createElement('div');
-      s.className = 'status-sub';
-      s.id = 'statusSub';
-      statusText.appendChild(s);
-    }
-    const subEl = document.getElementById('statusSub');
-    if(subEl){ subEl.textContent = sub||''; }
-  }
-
   /* ---------- 型号 / 尺寸 下拉菜单 ---------- */
   function populateModels(){
     selModel.innerHTML = '';
@@ -466,33 +482,34 @@
     const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
-      setStatusHTML('no', 'Niimbot 驱动加载失败',
-        'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot,请检查网络或关闭广告拦截后刷新');
-      btnConnect.disabled = true;
-      btnPrint.disabled = true;
+      transition(STATE.UNSUPPORTED, {
+        text:'Niimbot 驱动加载失败',
+        sub:'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot,请检查网络或关闭广告拦截后刷新'
+      });
       return false;
     }
     if(!WB || !BT.isSupported()){
-      setStatusHTML('no', '浏览器不支持 Web Bluetooth',
-        '请在 Chrome / Edge 桌面或安卓版中打开,并保证地址为 HTTPS 或 localhost(iOS 可尝试 Bluefy 浏览器)');
-      btnConnect.disabled = true;
-      btnPrint.disabled = true;
+      transition(STATE.UNSUPPORTED, {
+        text:'浏览器不支持 Web Bluetooth',
+        sub:'请在 Chrome / Edge 桌面或安卓版中打开,并保证地址为 HTTPS 或 localhost(iOS 可尝试 Bluefy 浏览器)'
+      });
       return false;
     }
-    setStatus('ready', '未连接打印机', '先选择型号和标签纸,再点下方按钮配对你的精臣打印机');
-    btnConnect.disabled = false;
-    btnConnect.textContent = '连接打印机';
     printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
     populateModels();
     populateLabelsForModel(DEFAULT_MODEL);
+    transition(STATE.DISCONNECTED, {
+      sub:'先选择型号和标签纸,再点下方按钮配对你的精臣打印机'
+    });
     return true;
   }
 
   /* ---------- 连接 / 识别(niimbot v2.4:Niimbot.identify 自动连接) ---------- */
-  async function onConnect(){
+  async function doConnect(){
     if(!BT) return;
     const modelHint = getCurrentModel();
-    btnConnect.disabled = true;
+    // 进入 connecting:按钮自动 disabled,显示"连接中…"
+    transition(STATE.CONNECTING, { text:'连接中…', sub:'请在浏览器弹窗中选择设备' });
     try{
       showToast('正在弹出设备连接列表...');
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
@@ -507,12 +524,7 @@
       }
       const devName = (info && info.deviceName) || 'Niimbot';
       const extra = matchedKey ? `已自动切换型号:${REGISTRY.models[matchedKey].label}` : `型号 ID:${info.modelId}(未知型号,请手动选择)`;
-      setStatus('ok', `已连接:${devName}`, extra);
-      btnConnect.textContent = '断开连接';
-      btnConnect.removeEventListener('click', onConnect);
-      btnConnect.addEventListener('click', onDisconnect, { once:true });
-      btnPrint.disabled = false;
-      printBox.classList.add('connected');
+      transition(STATE.CONNECTED, { text:`已连接:${devName}`, sub:extra });
       showToast('连接成功,可以打印');
     }catch(err){
       console.error(err);
@@ -520,32 +532,30 @@
       const isCancel = /cancel|取消|aborted|user.*cancel|chooser.*closed/i.test(rawMsg);
       if(isCancel){
         // 用户主动取消 → 完全回到初始未连接状态
-        setStatus('ready', '未连接打印机', '选择型号和标签纸后点"连接"');
-        btnConnect.textContent = '连接打印机';
+        transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点"连接"' });
         showToast('已取消连接');
       }else{
-        setStatus('no', '连接失败', rawMsg || '连接失败(可能取消了设备选择)');
-        btnConnect.textContent = '连接打印机';
+        // 真实失败:状态点置红,但仍处于 DISCONNECTED(按钮可重试)
+        transition(STATE.DISCONNECTED, { text:'连接失败', sub: rawMsg || '连接失败(可能取消了设备选择)' });
         showToast(rawMsg || '连接失败', true);
       }
-      // once:true 已在触发时移除 onConnect,这里必须重新绑定,否则取消/失败后按钮点不动
-      btnConnect.addEventListener('click', onConnect, { once:true });
-    }finally{
-      btnConnect.disabled = false;
     }
   }
 
-  async function onDisconnect(){
+  async function doDisconnect(){
+    transition(STATE.DISCONNECTING, { text:'断开中…' });
     try{ if(BT) await BT.disconnect(); }catch(e){}
-    isConnected = false;
     lastIdentifyInfo = null;
-    btnConnect.textContent = '连接打印机';
-    btnConnect.removeEventListener('click', onDisconnect);
-    btnConnect.addEventListener('click', onConnect, { once:true });
-    btnPrint.disabled = true;
-    printBox.classList.remove('connected');
-    setStatus('ready', '未连接打印机', '选择型号和标签纸后点"连接"');
+    transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点"连接"' });
     showToast('已断开');
+  }
+
+  /* 按钮唯一 handler:根据当前状态派发 connect / disconnect
+     彻底消除原先 removeEventListener + {once:true} 手动切 handler 的脆弱写法 */
+  function onConnectClick(){
+    if(state === STATE.DISCONNECTED)      doConnect();
+    else if(state === STATE.CONNECTED)   doDisconnect();
+    // CONNECTING / DISCONNECTING / UNSUPPORTED 状态下按钮已 disabled,不会进来
   }
 
   /* ---------- 渲染到标签尺寸的新 canvas(含等比缩放 + 左右偏移校准 + 黑白二值化) ---------- */
@@ -604,24 +614,26 @@
     const offsetY = Math.max(-99, Math.min(99, parseInt(selOffsetY.value||'0')));
 
     btnPrint.disabled = true;
-    let progressTimer = null;
     try{
       const offsetHint = (offsetX===0 && offsetY===0) ? '' : ` · 偏移 X${offsetX>=0?'+':''}${offsetX} Y${offsetY>=0?'+':''}${offsetY}px`;
       showToast(`准备打印...(${copies}份 × ${size.label}${offsetHint})`);
       const printCanvas = renderToPrintSize(size, fit, offsetX, offsetY);
       const pngDataURL = printCanvas.toDataURL('image/png');
-      // 真实打印进度
+      // 真实打印进度:停留在 CONNECTED,只改文案
       const onProgress = (msg) => {
         const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中...');
-        setStatus('ok', '打印中…', text);
+        transition(STATE.CONNECTED, { text:'打印中…', sub:text });
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
-      setStatus('ok', `打印完成 (${copies}份 × ${size.label})`, lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : '');
+      transition(STATE.CONNECTED, {
+        text:`打印完成 (${copies}份 × ${size.label})`,
+        sub: lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : ''
+      });
       showToast(`打印完成`);
     }catch(err){
       console.error(err);
       const msg = err && err.message ? err.message : '打印失败';
-      setStatus('no', '打印失败', msg);
+      transition(STATE.CONNECTED, { text:'打印失败', sub: msg });
       showToast('打印失败:' + msg, true);
     }finally{
       btnPrint.disabled = false;
@@ -638,7 +650,7 @@
   /* ============ 初始化 ============ */
   document.getElementById('exportBtn').addEventListener('click', exportJPG);
   document.getElementById('clearBtn').addEventListener('click', clearContents);
-  btnConnect.addEventListener('click', onConnect, { once:true });
+  btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
 
   buildInputs();
