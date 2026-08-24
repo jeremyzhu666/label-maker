@@ -493,8 +493,7 @@
   });
 
   /* ============ 初始化 ============ */
-  document.getElementById('exportBtn').addEventListener('click', exportJPG);
-  document.getElementById('clearBtn').addEventListener('click', clearContents);
+  // 下载 JPG / 清空 功能保留,按钮暂未挂载
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
 
