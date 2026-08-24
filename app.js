@@ -26,6 +26,12 @@
       maxTitleLen:12,                              //   标题最大字符数
       maxContentLen:16                            //   内容最大字符数
     },
+    stepper: {                                    // stepper 控件范围(单一来源,initStepper 与 onPrint 共用)
+      density:  { min:1,   max:5,  def:3 },
+      copies:   { min:1,   max:99, def:1 },
+      offsetX:  { min:-99, max:99, def:0 },
+      offsetY:  { min:-99, max:99, def:0 }
+    },
     defaults: { titles:['名称','编号','日期','自定义'] }
   });
 
@@ -114,22 +120,19 @@
     ctx.font = FONT_UI_TITLE;
     ctx.textBaseline='middle'; ctx.textAlign='left';
     drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
-    // 内容区:预览空内容画灰色占位提示;正式导出/打印时空内容留白
+    // 内容区:有内容画黑色;预览空内容画灰色占位提示;正式导出/打印时空内容留白
     const hasContent = !!String(contents[i]||'').trim();
-    let contentText = '';
-    if(hasContent){
-      ctx.fillStyle = '#000000';
-      contentText = contents[i];
-    } else if(!official){
-      ctx.fillStyle = '#9aa1b4';
-      contentText = smartPlaceholder(titles[i]);
-    } else {
-      ctx.fillStyle = '#000000';
-      contentText = '';
-    }
+    const mode = hasContent ? 'content' : (official ? 'blank' : 'placeholder');
+    const CONTENT_MODE = {
+      content:    { color:'#000000', text:contents[i] },
+      blank:      { color:'#000000', text:'' },
+      placeholder:{ color:'#9aa1b4', text:smartPlaceholder() }
+    };
+    const { color, text } = CONTENT_MODE[mode];
+    ctx.fillStyle = color;
     ctx.font = FONT_UI_CONTENT;
     ctx.textAlign='center';
-    drawTextClip(contentText||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
+    drawTextClip(text||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
   }
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
@@ -403,6 +406,12 @@
   }
 
   /* ---------- 渲染到标签尺寸的新 canvas(含等比缩放 + 左右偏移校准 + 黑白二值化) ---------- */
+  // fitMode 缩放比策略:每种模式只管算缩放比,居中偏移统一计算
+  const FIT_STRATEGIES = {
+    stretch: (iw, ih, pw, ph) => null,                              // stretch 直接填满,不走缩放比
+    cover:   (iw, ih, pw, ph) => Math.max(pw/iw, ph/ih),
+    contain: (iw, ih, pw, ph) => Math.min(pw/iw, ph/ih)
+  };
   function renderToPrintSize(lbl, fitMode, offsetX, offsetY){
     const pc = document.createElement('canvas');
     pc.width = lbl.w_px;
@@ -411,17 +420,14 @@
     pctx.fillStyle = '#ffffff';
     pctx.fillRect(0, 0, pc.width, pc.height);
 
-    let dw, dh, dx, dy;
     const iw = W, ih = H;
-    if(fitMode === 'stretch'){
+    let dw, dh, dx, dy;
+    const strategy = FIT_STRATEGIES[fitMode] || FIT_STRATEGIES.contain;
+    const r = strategy(iw, ih, pc.width, pc.height);
+    if(r === null){
+      // stretch:直接填满画布
       dw = pc.width; dh = pc.height; dx = 0; dy = 0;
-    } else if(fitMode === 'cover'){
-      const r = Math.max(pc.width/iw, pc.height/ih);
-      dw = iw*r; dh = ih*r;
-      dx = (pc.width - dw)/2;
-      dy = (pc.height - dh)/2;
     } else {
-      const r = Math.min(pc.width/iw, pc.height/ih);
       dw = iw*r; dh = ih*r;
       dx = (pc.width - dw)/2;
       dy = (pc.height - dh)/2;
@@ -461,10 +467,10 @@
     const size  = getCurrentLabel();
     if(!model || !size){ showToast('请先选择型号和尺寸', true); return; }
     const fit = selFit.value;
-    const copies = Math.max(1, Math.min(99, parseInt(copiesInp.value||'1')));
-    const density = Math.max(1, Math.min(5, parseInt(selDensity.value||'3')));
-    const offsetX = Math.max(-99, Math.min(99, parseInt(selOffsetX.value||'0')));
-    const offsetY = Math.max(-99, Math.min(99, parseInt(selOffsetY.value||'0')));
+    const copies  = getStepperVal('copies',    CONFIG.stepper.copies);
+    const density = getStepperVal('selDensity', CONFIG.stepper.density);
+    const offsetX = getStepperVal('selOffsetX', CONFIG.stepper.offsetX);
+    const offsetY = getStepperVal('selOffsetY', CONFIG.stepper.offsetY);
 
     btnPrint.disabled = true;
     try{
@@ -505,30 +511,33 @@
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
 
-  // 通用 stepper 初始化:支持份数(1-99)与偏移(-99~+99)
-  function initStepper(stepperId, valId, hiddenId, min, max){
+  // 通用 stepper 工具:clamp + 读取,范围常量来自 CONFIG.stepper
+  function clampInt(v, min, max){ return Math.max(min, Math.min(max, v|0)); }
+  function getStepperVal(hiddenId, cfg){
+    return clampInt(parseInt(document.getElementById(hiddenId).value || String(cfg.def), 10), cfg.min, cfg.max);
+  }
+  function initStepper(stepperId, valId, hiddenId, cfg){
     const stepper = document.getElementById(stepperId);
     if(!stepper) return;
     const valEl = document.getElementById(valId);
     const hidden = document.getElementById(hiddenId);
     const setVal = (n) => {
-      n = Math.max(min, Math.min(max, n|0));
+      n = clampInt(n, cfg.min, cfg.max);
       valEl.textContent = n;
       hidden.value = n;
     };
     stepper.addEventListener('click', (e) => {
       const btn = e.target.closest('.stepper-btn');
       if(!btn) return;
-      const cur = parseInt(hidden.value||'0', 10);
+      const cur = parseInt(hidden.value||String(cfg.def), 10);
       setVal(btn.dataset.act === 'inc' ? cur + 1 : cur - 1);
     });
-    // 初始化显示(偏移 0 显示为 0,非 +0)
-    setVal(parseInt(hidden.value||'0', 10));
+    setVal(parseInt(hidden.value||String(cfg.def), 10));
   }
-  initStepper('densityStepper', 'densityVal', 'selDensity', 1, 5);
-  initStepper('copiesStepper',  'copiesVal',  'copies',     1, 99);
-  initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', -99, 99);
-  initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', -99, 99);
+  initStepper('densityStepper', 'densityVal', 'selDensity', CONFIG.stepper.density);
+  initStepper('copiesStepper',  'copiesVal',  'copies',     CONFIG.stepper.copies);
+  initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
+  initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
 
   buildInputs();
   draw();
