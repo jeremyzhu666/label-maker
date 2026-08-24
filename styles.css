@@ -130,7 +130,21 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 }
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-select{cursor:pointer}
+
+/* —— select:去原生箭头,自定义下拉提示,和 input 对齐 —— */
+select{
+  cursor:pointer;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+  /* 右侧留出箭头位置:12px 箭头区 + 12px 原内边距 */
+  padding-right:32px;
+  /* 自定义箭头:用 SVG 内联,与 input 等高对齐 */
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4 L6 8 L10 4' stroke='%2386868b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  background-size:12px;
+}
 .title-input{font-weight:500}
 
 /* —— 预览区:右侧 sticky —— */
