@@ -156,15 +156,8 @@ canvas{
   image-rendering:auto;
 }
 
-/* —— 打印区:无嵌套容器,直接在 .step 白底里 —— */
+/* —— 打印区:状态点集成进按钮 —— */
 .print-box{ margin-top:0; padding:0; border:none; background:transparent; border-radius:0; }
-.status-line{
-  display:flex;align-items:center;justify-content:flex-start;gap:var(--s-2);
-  padding:0;
-  margin-bottom:var(--s-3);
-  font-size:var(--text-sm);font-weight:500;
-  line-height:20px;
-}
 .status-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--text-mute);flex-shrink:0;
@@ -172,12 +165,12 @@ canvas{
 .status-dot.ready{background:var(--warn)}
 .status-dot.ok{background:var(--ok)}
 .status-dot.no{background:var(--danger)}
-.status-text{line-height:20px;font-size:var(--text-sm)}
 .status-sub{
-  display:inline;
   font-size:var(--text-xs);color:var(--text-dim);
-  font-weight:400;margin-left:var(--s-1);
+  font-weight:400;margin-top:var(--s-2);
+  line-height:1.4;min-height:0;
 }
+.status-sub:empty{display:none}
 .select-row{
   display:grid;grid-template-columns:1fr 1fr;
   gap:var(--s-3);
@@ -243,10 +236,12 @@ canvas{
 .btn-reset{flex:0 0 88px;background:var(--card);color:var(--text-dim)}
 
 .btn-connect{
-  flex:1;background:var(--brand);color:#fff;
-  border-color:var(--brand);
+  flex:1;background:var(--card);color:var(--text);
+  border-color:var(--border-strong);
+  display:flex;align-items:center;justify-content:center;gap:var(--s-2);
 }
-.btn-connect:hover{background:var(--brand-hover);border-color:var(--brand-hover)}
+.btn-connect:hover{background:var(--bg);border-color:var(--text-dim)}
+.btn-connect:active{background:var(--border)}
 
 .connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-3)}
 .connect-row .btn-print{flex:0 0 auto}

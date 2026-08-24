@@ -179,25 +179,31 @@
     }
     const baseFont = ctx.font;
     const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
-    // 二分查找最大能放下的字号(O(log n))
+    // 二分查找最大能放下的字号(O(log n));fontOf 结果缓存避免重复字符串拼接
+    const fontCache = new Map();
+    const fontFor = (size) => {
+      let f = fontCache.get(size);
+      if(!f){ f = fontOf(weight, size); fontCache.set(size, f); }
+      return f;
+    };
     let lo = minSize, hi = origSize, bestSize = minSize;
     while(lo <= hi){
       const mid = Math.floor((lo + hi) / 2);
-      if(measureAt(t, mid, fontOf(weight, mid)) <= maxW){
+      if(measureAt(t, mid, fontFor(mid)) <= maxW){
         bestSize = mid;
         lo = mid + 1;
       } else {
         hi = mid - 1;
       }
     }
-    // 用找到的最大字号画;若仍放不下则截断加省略号
-    const bestFont = fontOf(weight, bestSize);
+    // bestSize 是二分已验证能放下的最大字号,直接画即可(无需再测)
+    const bestFont = fontFor(bestSize);
     ctx.font = bestFont;
-    if(measureAt(t, bestSize, bestFont) <= maxW){
+    if(bestSize > minSize || measureAt(t, bestSize, bestFont) <= maxW){
       ctx.fillText(t, x, y);
     } else {
-      // 截断:逐字删到"文本+省略号"能放下为止
-      while(t.length > 1 && ctx.measureText(t + '…').width > maxW){
+      // 兜底:bestSize 仍放不下(理论不会到这),截断加省略号
+      while(t.length > 1 && measureAt(t + '…', bestSize, bestFont) > maxW){
         t = t.slice(0, -1);
       }
       ctx.fillText(t + '…', x, y);
@@ -233,7 +239,7 @@
 
   // --- 蓝牙状态 ---
   const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
+  const btnLabel = document.getElementById('btnLabel');
   const statusSub = document.getElementById('statusSub');
   const btnConnect = document.getElementById('btnConnect');
   const btnPrint = document.getElementById('printBtn');
@@ -274,12 +280,11 @@
   function renderStatus(){
     const m = STATUS_MAP[state] || STATUS_MAP[STATE.DISCONNECTED];
     statusDot.className = 'status-dot ' + m.dot;
-    // statusText 初始 HTML 是"文本节点 + statusSub div",firstChild 必是文本节点
-    statusText.firstChild.nodeValue = statusCtx.text || m.text;
-    statusSub.textContent = statusCtx.sub || '';
-    btnConnect.textContent = m.btn;
-    btnConnect.disabled = m.btnDisabled;
+    btnLabel.textContent = statusCtx.btn || m.btn;
+    btnConnect.disabled = statusCtx.btnDisabled !== undefined ? statusCtx.btnDisabled : m.btnDisabled;
     btnPrint.disabled = m.printDisabled;
+    // caption:上下文详情(设备名/进度/错误),无内容时隐藏
+    statusSub.textContent = statusCtx.sub || '';
   }
 
   // 唯一的状态切换入口。newSub/newText 可选,缺省时由状态推导默认文案
@@ -335,15 +340,13 @@
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
       transition(STATE.UNSUPPORTED, {
-        text:'Niimbot 驱动加载失败',
-        sub:'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot，请检查网络或关闭广告拦截后刷新'
+        sub:'Niimbot 驱动加载失败 · CDN 脚本未加载，请检查网络或关闭广告拦截后刷新'
       });
       return false;
     }
     if(!WB || !BT.isSupported()){
       transition(STATE.UNSUPPORTED, {
-        text:'浏览器不支持 Web Bluetooth',
-        sub:'请在 Chrome / Edge 桌面或安卓版中打开，并保证地址为 HTTPS 或 localhost（iOS 可尝试 Bluefy 浏览器）'
+        sub:'浏览器不支持 Web Bluetooth · 请在 Chrome / Edge 桌面或安卓版中打开（iOS 可尝试 Bluefy 浏览器）'
       });
       return false;
     }
@@ -359,7 +362,7 @@
     if(!BT) return;
     const modelHint = getCurrentModel();
     // 进入 connecting:按钮自动 disabled,显示"连接中…"
-    transition(STATE.CONNECTING, { text:'连接中…', sub:'请在浏览器弹窗中选择设备' });
+    transition(STATE.CONNECTING, { sub:'请在浏览器弹窗中选择设备' });
     try{
       showToast('正在弹出设备连接列表……');
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
@@ -373,8 +376,8 @@
         populateLabelsForModel(matchedKey);
       }
       const devName = (info && info.deviceName) || 'Niimbot';
-      const extra = matchedKey ? `已自动切换型号：${REGISTRY.models[matchedKey].label}` : `型号 ID：${info.modelId}（未知型号，请手动选择）`;
-      transition(STATE.CONNECTED, { text:`已连接：${devName}`, sub:extra });
+      const extra = matchedKey ? `已切换型号：${REGISTRY.models[matchedKey].label}` : `型号 ID：${info.modelId}（未知）`;
+      transition(STATE.CONNECTED, { sub:`已连接：${devName} · ${extra}` });
       showToast('连接成功，可以打印');
     }catch(err){
       console.error(err);
@@ -385,15 +388,15 @@
         transition(STATE.DISCONNECTED, { sub:'' });
         showToast('已取消连接');
       }else{
-        // 真实失败:状态点置红,但仍处于 DISCONNECTED(按钮可重试)
-        transition(STATE.DISCONNECTED, { text:'连接失败', sub: rawMsg || '连接失败（可能取消了设备选择）' });
+        // 真实失败:仍处于 DISCONNECTED(按钮可重试),caption 显示原因
+        transition(STATE.DISCONNECTED, { sub: rawMsg ? '连接失败：'+rawMsg : '连接失败' });
         showToast(rawMsg || '连接失败', true);
       }
     }
   }
 
   async function doDisconnect(){
-    transition(STATE.DISCONNECTING, { text:'断开中…' });
+    transition(STATE.DISCONNECTING, { sub:'' });
     try{ if(BT) await BT.disconnect(); }catch(e){}
     lastIdentifyInfo = null;
     transition(STATE.DISCONNECTED, { sub:'' });
@@ -481,21 +484,20 @@
       showToast(`准备打印……（${copies}份 × ${size.label}${offsetHint}）`);
       const printCanvas = renderToPrintSize(size, fit, offsetX, offsetY);
       const pngDataURL = printCanvas.toDataURL('image/png');
-      // 真实打印进度:停留在 CONNECTED,只改文案
+      // 真实打印进度:停留在 CONNECTED,按钮显示"打印中…"并禁用
       const onProgress = (msg) => {
-        const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中……');
-        transition(STATE.CONNECTED, { text:'打印中…', sub:text });
+        const detail = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中……');
+        transition(STATE.CONNECTED, { btn:'打印中…', btnDisabled:true, sub:detail });
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
       transition(STATE.CONNECTED, {
-        text:`打印完成（${copies}份 × ${size.label}）`,
-        sub: lastIdentifyInfo ? `设备：${lastIdentifyInfo.deviceName || 'Niimbot'}` : ''
+        sub:`打印完成 · ${copies}份 × ${size.label}`
       });
       showToast(`打印完成`);
     }catch(err){
       console.error(err);
       const msg = err && err.message ? err.message : '打印失败';
-      transition(STATE.CONNECTED, { text:'打印失败', sub: msg });
+      transition(STATE.CONNECTED, { sub:'打印失败：'+msg });
       showToast('打印失败：' + msg, true);
     }finally{
       btnPrint.disabled = false;
