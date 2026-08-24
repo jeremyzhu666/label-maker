@@ -49,9 +49,26 @@ body{
 }
 
 /* —— Header:克制,标题不抢内容焦点 —— */
-header{text-align:center;margin-bottom:var(--s-3);padding:var(--s-1) 0}
+header{text-align:center;margin-bottom:var(--s-3);padding:var(--s-1) 0;position:relative}
 header h1{font-size:var(--text-xl);font-weight:600;letter-spacing:-.02em}
 header p{font-size:var(--text-xs);color:var(--text-mute);margin-top:var(--s-1);font-weight:400}
+
+/* —— 语言切换:右上角克制小按钮 —— */
+.lang-switch{
+  position:absolute;top:0;right:0;
+  display:flex;align-items:center;gap:2px;
+  font-size:var(--text-xs);
+}
+.lang-btn{
+  border:none;background:transparent;
+  color:var(--text-mute);font-family:var(--font-ui);
+  font-size:var(--text-xs);font-weight:500;
+  cursor:pointer;padding:2px 6px;border-radius:var(--radius);
+  transition:color .15s,background .15s;
+}
+.lang-btn:hover{color:var(--text-dim)}
+.lang-btn.active{color:var(--text);font-weight:600}
+.lang-sep{color:var(--text-mute)}
 
 /* —— 双栏布局:桌面左编辑右预览,上边沿严格对齐 —— */
 .layout{
@@ -237,10 +254,10 @@ canvas{
 
 .btn-connect{
   flex:1;background:var(--card);color:var(--text);
-  border-color:var(--border-strong);
+  border-color:var(--text-dim);
   display:flex;align-items:center;justify-content:center;gap:var(--s-2);
 }
-.btn-connect:hover{background:var(--bg);border-color:var(--text-dim)}
+.btn-connect:hover{background:var(--bg);border-color:var(--text)}
 .btn-connect:active{background:var(--border)}
 
 .connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-3)}

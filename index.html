@@ -4,15 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker 标签生成工具</title>
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=10">
 <!-- Barlow Condensed 只给 canvas 打印用,异步加载不阻塞首屏 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <header>
-    <h1>Label Maker</h1>
-    <p>developed by 酷卡创新</p>
+    <div class="lang-switch" id="langSwitch">
+      <button type="button" class="lang-btn" data-lang="zh" aria-label="中文">中</button>
+      <span class="lang-sep">/</span>
+      <button type="button" class="lang-btn" data-lang="en" aria-label="English">EN</button>
+    </div>
+    <h1 data-i18n="h1">Label Maker</h1>
+    <p data-i18n="developedBy">developed by 酷卡创新</p>
   </header>
 
   <div class="layout">
@@ -22,7 +27,7 @@
       <!-- 01 标签编辑 -->
       <section class="step">
         <div class="step-head">
-          <h2>标签编辑</h2>
+          <h2 data-i18n="sections.edit">标签编辑</h2>
         </div>
         <div class="grid" id="inputGrid"></div>
       </section>
@@ -30,16 +35,16 @@
       <!-- 02 标签打印 -->
       <section class="step">
         <div class="step-head">
-          <h2>标签打印</h2>
+          <h2 data-i18n="sections.print">标签打印</h2>
         </div>
 
         <div class="print-box" id="printBox">
           <div class="connect-row">
             <button class="btn btn-connect" id="btnConnect" disabled>
               <span class="status-dot" id="statusDot"></span>
-              <span id="btnLabel">连接打印机</span>
+              <span id="btnLabel" data-i18n="buttons.connect">连接打印机</span>
             </button>
-            <button class="btn btn-print" id="printBtn" disabled>立即打印</button>
+            <button class="btn btn-print" id="printBtn" disabled data-i18n="buttons.print">立即打印</button>
           </div>
           <div class="status-sub" id="statusSub"></div>
         </div>
@@ -48,42 +53,42 @@
       <!-- 03 打印设置 -->
       <section class="step" id="printSelects" hidden>
         <div class="step-head">
-          <h2>打印设置</h2>
+          <h2 data-i18n="sections.settings">打印设置</h2>
         </div>
         <div class="select-row">
           <div>
-            <label>打印浓度</label>
+            <label data-i18n="settings.density">打印浓度</label>
             <div class="stepper" id="densityStepper">
-              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <button type="button" class="stepper-btn" data-act="dec" data-i18n-aria="aria.decrease" aria-label="减少">−</button>
               <span class="stepper-val" id="densityVal">3</span>
-              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+              <button type="button" class="stepper-btn" data-act="inc" data-i18n-aria="aria.increase" aria-label="增加">+</button>
             </div>
             <input id="selDensity" type="hidden" value="3">
           </div>
           <div>
-            <label>份数</label>
+            <label data-i18n="settings.copies">份数</label>
             <div class="stepper" id="copiesStepper">
-              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <button type="button" class="stepper-btn" data-act="dec" data-i18n-aria="aria.decrease" aria-label="减少">−</button>
               <span class="stepper-val" id="copiesVal">1</span>
-              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+              <button type="button" class="stepper-btn" data-act="inc" data-i18n-aria="aria.increase" aria-label="增加">+</button>
             </div>
             <input id="copies" type="hidden" value="1">
           </div>
           <div>
-            <label>左右偏移</label>
+            <label data-i18n="settings.offsetX">左右偏移</label>
             <div class="stepper" id="offsetXStepper">
-              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <button type="button" class="stepper-btn" data-act="dec" data-i18n-aria="aria.decrease" aria-label="减少">−</button>
               <span class="stepper-val" id="offsetXVal">0</span>
-              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+              <button type="button" class="stepper-btn" data-act="inc" data-i18n-aria="aria.increase" aria-label="增加">+</button>
             </div>
             <input id="selOffsetX" type="hidden" value="0">
           </div>
           <div>
-            <label>上下偏移</label>
+            <label data-i18n="settings.offsetY">上下偏移</label>
             <div class="stepper" id="offsetYStepper">
-              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <button type="button" class="stepper-btn" data-act="dec" data-i18n-aria="aria.decrease" aria-label="减少">−</button>
               <span class="stepper-val" id="offsetYVal">0</span>
-              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+              <button type="button" class="stepper-btn" data-act="inc" data-i18n-aria="aria.increase" aria-label="增加">+</button>
             </div>
             <input id="selOffsetY" type="hidden" value="0">
           </div>
@@ -104,7 +109,7 @@
     <aside class="col-aside">
       <section class="step preview-section">
         <div class="step-head">
-          <h2>标签预览</h2>
+          <h2 data-i18n="sections.preview">标签预览</h2>
         </div>
         <div class="preview-wrap">
           <canvas id="canvas" width="800" height="600"></canvas>
@@ -115,8 +120,9 @@
 
   <div class="toast" id="toast"></div>
 
-<!-- niimbot.js + registry.js + app.js 都加 defer:DOM 解析后按顺序执行 -->
+<!-- niimbot.js + i18n.js + registry.js + app.js 都加 defer:DOM 解析后按顺序执行 -->
 <script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js" defer></script>
+<script src="i18n.js" defer></script>
 <script src="registry.js" defer></script>
 <script src="app.js" defer></script>
 </body>

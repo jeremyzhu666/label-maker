@@ -31,8 +31,8 @@
       copies:   { min:1,   max:99, def:1 },
       offsetX:  { min:-99, max:99, def:0 },
       offsetY:  { min:-99, max:99, def:0 }
-    },
-    defaults: { titles:['名称','编号','日期','自定义'] }
+    }
+    // 默认标题/内容由 i18n 提供,随语言切换
   });
 
   const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
@@ -44,12 +44,50 @@
   }
   const FONT_UI_TITLE   = fontOf(CONFIG.font.titleWeight,   CONFIG.font.titleSize);
   const FONT_UI_CONTENT = fontOf(CONFIG.font.contentWeight, CONFIG.font.contentSize);
-  const defaultTitles = CONFIG.defaults.titles;
+
+  /* ---------- i18n:语言切换,单一状态源,新增语言无需改业务代码 ---------- */
+  let lang = window.DEFAULT_LANG || 'zh';
+  let S = window.I18N[lang];
+  // t(path):按点分路径取字符串,函数类型自动调用;未命中返回 path 本身(便于发现遗漏)
+  function t(path){
+    const parts = path.split('.');
+    let v = S;
+    for(let i=0;i<parts.length;i++){ v = v && v[parts[i]]; }
+    return typeof v === 'function' ? v : (v === undefined ? path : v);
+  }
+  // applyI18n:遍历 data-i18n / data-i18n-aria 属性,批量更新 DOM
+  function applyI18n(){
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.title = S.docTitle;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+      el.setAttribute('aria-label', t(el.dataset.i18nAria));
+    });
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+  }
+  function setLang(l){
+    if(!window.I18N[l] || l === lang) return;
+    lang = l;
+    S = window.I18N[l];
+    applyI18n();
+    // 默认标题/内容随语言切换,重置输入并重绘
+    titles = S.defaults.titles.slice();
+    contents = S.defaults.contents.slice();
+    buildInputs();
+    draw();
+    // 状态文案同步刷新
+    renderStatus();
+  }
+
   // placeholder 统一为默认提示
-  function smartPlaceholder(){ return '编辑模板'; }
+  function smartPlaceholder(){ return S.input.placeholder; }
   // 无保存功能:每次刷新回到默认状态
-  let titles = defaultTitles.slice();
-  let contents = ['Apple','A01','YYMMDD','for MacOS'];
+  let titles = S.defaults.titles.slice();
+  let contents = S.defaults.contents.slice();
 
   const grid = document.getElementById('inputGrid');
   const canvas = document.getElementById('canvas');
@@ -87,7 +125,7 @@
       titleInp.dataset.type = 't';
       titleInp.dataset.i = i;
       titleInp.value = titles[i];
-      titleInp.placeholder = '模板标题';
+      titleInp.placeholder = S.input.titlePlaceholder;
       titleInp.maxLength = CONFIG.input.maxTitleLen;
       titleInp.addEventListener('input', onInput);
 
@@ -267,18 +305,18 @@
   let state = STATE.UNSUPPORTED;
   let statusCtx = { sub:'' };   // 传给 transition 的上下文(sub/btn 覆盖)
 
-  /* 状态映射:纯数据,描述每状态的 UI 表现(btn/sub 由 statusCtx 覆盖) */
+  /* 状态映射:纯数据,描述每状态的 UI 表现(btn 由 i18n 提供,sub 由 statusCtx 覆盖) */
   const STATUS_MAP = {
-    [STATE.UNSUPPORTED]:  { dot:'no',    btn:'连接打印机', btnDisabled:true,  printDisabled:true  },
-    [STATE.DISCONNECTED]: { dot:'ready', btn:'连接打印机', btnDisabled:false, printDisabled:true  },
-    [STATE.CONNECTING]:   { dot:'ready', btn:'连接中…',   btnDisabled:true,  printDisabled:true  },
-    [STATE.CONNECTED]:    { dot:'ok',    btn:'断开连接',   btnDisabled:false, printDisabled:false },
-    [STATE.DISCONNECTING]:{ dot:'ready', btn:'断开中…',   btnDisabled:true,  printDisabled:true  }
+    [STATE.UNSUPPORTED]:  { dot:'no',    btnKey:'buttons.connect',     btnDisabled:true,  printDisabled:true  },
+    [STATE.DISCONNECTED]: { dot:'ready', btnKey:'buttons.connect',     btnDisabled:false, printDisabled:true  },
+    [STATE.CONNECTING]:   { dot:'ready', btnKey:'buttons.connecting',  btnDisabled:true,  printDisabled:true  },
+    [STATE.CONNECTED]:    { dot:'ok',    btnKey:'buttons.disconnect',  btnDisabled:false, printDisabled:false },
+    [STATE.DISCONNECTING]:{ dot:'ready', btnKey:'buttons.disconnecting',btnDisabled:true,  printDisabled:true  }
   };
   function renderStatus(){
     const m = STATUS_MAP[state] || STATUS_MAP[STATE.DISCONNECTED];
     statusDot.className = 'status-dot ' + m.dot;
-    btnLabel.textContent = statusCtx.btn || m.btn;
+    btnLabel.textContent = statusCtx.btn || t(m.btnKey);
     btnConnect.disabled = statusCtx.btnDisabled !== undefined ? statusCtx.btnDisabled : m.btnDisabled;
     btnPrint.disabled = m.printDisabled;
     // caption:上下文详情(设备名/进度/错误),无内容时隐藏
@@ -337,15 +375,11 @@
     const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
-      transition(STATE.UNSUPPORTED, {
-        sub:'Niimbot 驱动加载失败 · CDN 脚本未加载，请检查网络或关闭广告拦截后刷新'
-      });
+      transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedDriver });
       return false;
     }
     if(!WB || !BT.isSupported()){
-      transition(STATE.UNSUPPORTED, {
-        sub:'浏览器不支持 Web Bluetooth · 请在 Chrome / Edge 桌面或安卓版中打开（iOS 可尝试 Bluefy 浏览器）'
-      });
+      transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedBT });
       return false;
     }
     printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
@@ -360,9 +394,9 @@
     if(!BT) return;
     const modelHint = getCurrentModel();
     // 进入 connecting:按钮自动 disabled,显示"连接中…"
-    transition(STATE.CONNECTING, { sub:'请在浏览器弹窗中选择设备' });
+    transition(STATE.CONNECTING, { sub: S.status.selectDevice });
     try{
-      showToast('正在弹出设备连接列表……');
+      showToast(S.toast.connecting);
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
       const allPrefixes = [...new Set(Object.values(REGISTRY.models).flatMap(m => m.name_prefixes || []))];
       const info = await BT.identify({ ...modelHint, name_prefixes: allPrefixes });
@@ -374,9 +408,9 @@
         populateLabelsForModel(matchedKey);
       }
       const devName = (info && info.deviceName) || 'Niimbot';
-      const extra = matchedKey ? `已切换型号：${REGISTRY.models[matchedKey].label}` : `型号 ID：${info.modelId}（未知）`;
-      transition(STATE.CONNECTED, { sub:`已连接：${devName} · ${extra}` });
-      showToast('连接成功，可以打印');
+      const extra = matchedKey ? S.status.modelSwitched(REGISTRY.models[matchedKey].label) : S.status.modelUnknown(info.modelId);
+      transition(STATE.CONNECTED, { sub: S.status.connected(devName, extra) });
+      showToast(S.toast.connected);
     }catch(err){
       console.error(err);
       const rawMsg = err && err.message ? err.message : '';
@@ -384,11 +418,11 @@
       if(isCancel){
         // 用户主动取消 → 完全回到初始未连接状态
         transition(STATE.DISCONNECTED, { sub:'' });
-        showToast('已取消连接');
+        showToast(S.toast.cancelled);
       }else{
         // 真实失败:仍处于 DISCONNECTED(按钮可重试),caption 显示原因
-        transition(STATE.DISCONNECTED, { sub: rawMsg ? '连接失败：'+rawMsg : '连接失败' });
-        showToast(rawMsg || '连接失败', true);
+        transition(STATE.DISCONNECTED, { sub: S.status.connectFailed(rawMsg) });
+        showToast(S.toast.connectFailed, true);
       }
     }
   }
@@ -398,7 +432,7 @@
     try{ if(BT) await BT.disconnect(); }catch(e){}
     lastIdentifyInfo = null;
     transition(STATE.DISCONNECTED, { sub:'' });
-    showToast('已断开');
+    showToast(S.toast.disconnected);
   }
 
   /* 按钮唯一 handler:根据当前状态派发 connect / disconnect
@@ -465,11 +499,11 @@
 
   /* ---------- 打印(Niimbot.printImage,PNG dataURL) ---------- */
   async function onPrint(){
-    if(!BT){ showToast('Niimbot 驱动未加载', true); return; }
+    if(!BT){ showToast(S.toast.noDriver, true); return; }
     draw(true);
     const model = getCurrentModel();
     const size  = getCurrentLabel();
-    if(!model || !size){ showToast('请先选择型号和尺寸', true); return; }
+    if(!model || !size){ showToast(S.toast.noDriver, true); return; }
     const fit = selFit.value;
     const copies  = getStepperVal('copies',    CONFIG.stepper.copies);
     const density = getStepperVal('selDensity', CONFIG.stepper.density);
@@ -478,25 +512,25 @@
 
     btnPrint.disabled = true;
     try{
-      const offsetHint = (offsetX===0 && offsetY===0) ? '' : ` · 偏移 X${offsetX>=0?'+':''}${offsetX} Y${offsetY>=0?'+':''}${offsetY}px`;
-      showToast(`准备打印……（${copies}份 × ${size.label}${offsetHint}）`);
+      const offsetHint = (offsetX===0 && offsetY===0) ? '' : ` · X${offsetX>=0?'+':''}${offsetX} Y${offsetY>=0?'+':''}${offsetY}px`;
+      showToast(S.toast.printing(copies, size.label, offsetHint));
       const printCanvas = renderToPrintSize(size, fit, offsetX, offsetY);
       const pngDataURL = printCanvas.toDataURL('image/png');
       // 真实打印进度:停留在 CONNECTED,按钮显示"打印中…"并禁用
       const onProgress = (msg) => {
-        const detail = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中……');
-        transition(STATE.CONNECTED, { btn:'打印中…', btnDisabled:true, sub:detail });
+        const detail = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : t('buttons.printing'));
+        transition(STATE.CONNECTED, { btn:t('buttons.printing'), btnDisabled:true, sub:detail });
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
       transition(STATE.CONNECTED, {
-        sub:`打印完成 · ${copies}份 × ${size.label}`
+        sub: S.toast.printed + ' · ' + copies + ' × ' + size.label
       });
-      showToast(`打印完成`);
+      showToast(S.toast.printed);
     }catch(err){
       console.error(err);
-      const msg = err && err.message ? err.message : '打印失败';
-      transition(STATE.CONNECTED, { sub:'打印失败：'+msg });
-      showToast('打印失败：' + msg, true);
+      const msg = err && err.message ? err.message : S.toast.printFailed('');
+      transition(STATE.CONNECTED, { sub: S.toast.printFailed(msg) });
+      showToast(S.toast.printFailed(msg), true);
     }finally{
       btnPrint.disabled = false;
     }
@@ -506,13 +540,18 @@
   selModel.addEventListener('change', () => {
     const cur = selModel.value;
     populateLabelsForModel(cur);
-    showToast(`已切换到 ${REGISTRY.models[cur].label}，尺寸列表已更新`);
+    showToast(S.toast.modelSwitched(REGISTRY.models[cur].label));
   });
 
   /* ============ 初始化 ============ */
   // 下载 JPG / 清空 功能保留,按钮暂未挂载
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
+  // 语言切换:事件委托,新增语言按钮自动支持
+  document.getElementById('langSwitch').addEventListener('click', (e) => {
+    const btn = e.target.closest('.lang-btn');
+    if(btn) setLang(btn.dataset.lang);
+  });
 
   // 通用 stepper 工具:clamp + 读取,范围常量来自 CONFIG.stepper
   function clampInt(v, min, max){ return Math.max(min, Math.min(max, v|0)); }
@@ -568,6 +607,7 @@
   }
   // 初始化单一入口:顺序清晰,每个子函数职责单一
   function init(){
+    applyI18n();
     buildInputs();
     draw();
     initSteppers();
