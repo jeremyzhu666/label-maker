@@ -516,10 +516,20 @@
       showToast('连接成功,可以打印');
     }catch(err){
       console.error(err);
-      const msg = err && err.message ? err.message : '连接失败(可能取消了设备选择)';
-      setStatus('no', '连接失败', msg);
-      btnConnect.textContent = '重新连接';
-      showToast(msg, true);
+      const rawMsg = err && err.message ? err.message : '';
+      const isCancel = /cancel|取消|aborted|user.*cancel|chooser.*closed/i.test(rawMsg);
+      if(isCancel){
+        // 用户主动取消 → 完全回到初始未连接状态
+        setStatus('ready', '未连接打印机', '选择型号和标签纸后点"连接"');
+        btnConnect.textContent = '连接打印机';
+        showToast('已取消连接');
+      }else{
+        setStatus('no', '连接失败', rawMsg || '连接失败(可能取消了设备选择)');
+        btnConnect.textContent = '连接打印机';
+        showToast(rawMsg || '连接失败', true);
+      }
+      // once:true 已在触发时移除 onConnect,这里必须重新绑定,否则取消/失败后按钮点不动
+      btnConnect.addEventListener('click', onConnect, { once:true });
     }finally{
       btnConnect.disabled = false;
     }
