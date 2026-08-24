@@ -255,31 +255,31 @@
       /* ====== 300 dpi: B1 Pro / B2 Pro / M2-H / D11_H ====== */
       T15x30_300:  { key:'T15x30_300',  label:'15 × 30 mm',       code:'T15*30',  w_mm:15, h_mm:30, w_px:177, h_px:354, margin:6,  dpi:300 },
       T20x40_300:  { key:'T20x40_300',  label:'20 × 40 mm',       code:'T20*40',  w_mm:20, h_mm:40, w_px:236, h_px:472, margin:8,  dpi:300 },
-      T25x25_300:  { key:'T25x25_300',  label:'25 × 25 mm (方)',  code:'T25*25',  w_mm:25, h_mm:25, w_px:295, h_px:295, margin:8,  dpi:300 },
-      T25x38_300:  { key:'T25x38_300',  label:'25 × 38 mm (线缆旗)',code:'T25*38+40',w_mm:25,h_mm:38,w_px:295,h_px:449,margin:10,dpi:300 },
-      T30x20_300:  { key:'T30x20_300',  label:'30 × 20 mm (横)',  code:'T30*20',  w_mm:30, h_mm:20, w_px:354, h_px:236, margin:10, dpi:300 },
+      T25x25_300:  { key:'T25x25_300',  label:'25 × 25 mm（方）',  code:'T25*25',  w_mm:25, h_mm:25, w_px:295, h_px:295, margin:8,  dpi:300 },
+      T25x38_300:  { key:'T25x38_300',  label:'25 × 38 mm（线缆旗）',code:'T25*38+40',w_mm:25,h_mm:38,w_px:295,h_px:449,margin:10,dpi:300 },
+      T30x20_300:  { key:'T30x20_300',  label:'30 × 20 mm（横）',  code:'T30*20',  w_mm:30, h_mm:20, w_px:354, h_px:236, margin:10, dpi:300 },
       T30x30_300:  { key:'T30x30_300',  label:'30 × 30 mm',       code:'T30*30',  w_mm:30, h_mm:30, w_px:354, h_px:354, margin:10, dpi:300 },
-      T30x45_300:  { key:'T30x45_300',  label:'30 × 45 mm (线缆旗)',code:'T30*45+50',w_mm:30,h_mm:45,w_px:354,h_px:531,margin:10,dpi:300 },
-      T40x20_300:  { key:'T40x20_300',  label:'40 × 20 mm (横)',  code:'T40*20',  w_mm:40, h_mm:20, w_px:472, h_px:236, margin:10, dpi:300 },
-      T40x30_300:  { key:'T40x30_300',  label:'40 × 30 mm (横)',  code:'T40*30',  w_mm:40, h_mm:30, w_px:472, h_px:354, margin:10, dpi:300 },
-      T40x60_300:  { key:'T40x60_300',  label:'40 × 60 mm (大)',  code:'T40*60',  w_mm:40, h_mm:60, w_px:472, h_px:709, margin:10, dpi:300 },
-      T50x30_300:  { key:'T50x30_300',  label:'50 × 30 mm (大横)',code:'T50*30',  w_mm:50, h_mm:30, w_px:584, h_px:354, margin:10, dpi:300 },
-      T50x50_300:  { key:'T50x50_300',  label:'50 × 50 mm (大方)',code:'T50*50',  w_mm:50, h_mm:50, w_px:584, h_px:591, margin:10, dpi:300 },
-      T50x80_300:  { key:'T50x80_300',  label:'50 × 80 mm (竖大)',code:'T50*80',  w_mm:50, h_mm:80, w_px:584, h_px:945, margin:10, dpi:300 },
+      T30x45_300:  { key:'T30x45_300',  label:'30 × 45 mm（线缆旗）',code:'T30*45+50',w_mm:30,h_mm:45,w_px:354,h_px:531,margin:10,dpi:300 },
+      T40x20_300:  { key:'T40x20_300',  label:'40 × 20 mm（横）',  code:'T40*20',  w_mm:40, h_mm:20, w_px:472, h_px:236, margin:10, dpi:300 },
+      T40x30_300:  { key:'T40x30_300',  label:'40 × 30 mm（横）',  code:'T40*30',  w_mm:40, h_mm:30, w_px:472, h_px:354, margin:10, dpi:300 },
+      T40x60_300:  { key:'T40x60_300',  label:'40 × 60 mm（大）',  code:'T40*60',  w_mm:40, h_mm:60, w_px:472, h_px:709, margin:10, dpi:300 },
+      T50x30_300:  { key:'T50x30_300',  label:'50 × 30 mm（大横）',code:'T50*30',  w_mm:50, h_mm:30, w_px:584, h_px:354, margin:10, dpi:300 },
+      T50x50_300:  { key:'T50x50_300',  label:'50 × 50 mm（大方）',code:'T50*50',  w_mm:50, h_mm:50, w_px:584, h_px:591, margin:10, dpi:300 },
+      T50x80_300:  { key:'T50x80_300',  label:'50 × 80 mm（竖大）',code:'T50*80',  w_mm:50, h_mm:80, w_px:584, h_px:945, margin:10, dpi:300 },
       T60x40_300:  { key:'T60x40_300',  label:'60 × 40 mm',       code:'T60*40',  w_mm:60, h_mm:40, w_px:709, h_px:472, margin:10, dpi:300 },
 
       /* ====== 203 dpi: B1 / D110 / N1 ====== */
-      T14x50_203:  { key:'T14x50_203',  label:'14 × 50 mm (经典条)',code:'T14*50', w_mm:14, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-1 },
+      T14x50_203:  { key:'T14x50_203',  label:'14 × 50 mm（经典条）',code:'T14*50', w_mm:14, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-1 },
       T15x30_203:  { key:'T15x30_203',  label:'15 × 30 mm',       code:'T15*30',  w_mm:15, h_mm:30, w_px:120, h_px:240, margin:6,  dpi:203 },
-      T15x50_203:  { key:'T15x50_203',  label:'15 × 50 mm (小条)',code:'T15*50',  w_mm:15, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-2 },
-      T20x20_203:  { key:'T20x20_203',  label:'20 × 20 mm (方)',  code:'T20*20',  w_mm:20, h_mm:20, w_px:160, h_px:160, margin:8,  dpi:203 },
-      T25x25_203:  { key:'T25x25_203',  label:'25 × 25 mm (方)',  code:'T25*25',  w_mm:25, h_mm:25, w_px:200, h_px:200, margin:8,  dpi:203 },
-      T30x20_203:  { key:'T30x20_203',  label:'30 × 20 mm (横)',  code:'T30*20',  w_mm:30, h_mm:20, w_px:240, h_px:160, margin:10, dpi:203 },
+      T15x50_203:  { key:'T15x50_203',  label:'15 × 50 mm（小条）',code:'T15*50',  w_mm:15, h_mm:50, w_px:96,  h_px:400, margin:6,  dpi:203, offset_y_px:-2 },
+      T20x20_203:  { key:'T20x20_203',  label:'20 × 20 mm（方）',  code:'T20*20',  w_mm:20, h_mm:20, w_px:160, h_px:160, margin:8,  dpi:203 },
+      T25x25_203:  { key:'T25x25_203',  label:'25 × 25 mm（方）',  code:'T25*25',  w_mm:25, h_mm:25, w_px:200, h_px:200, margin:8,  dpi:203 },
+      T30x20_203:  { key:'T30x20_203',  label:'30 × 20 mm（横）',  code:'T30*20',  w_mm:30, h_mm:20, w_px:240, h_px:160, margin:10, dpi:203 },
       T30x30_203:  { key:'T30x30_203',  label:'30 × 30 mm',       code:'T30*30',  w_mm:30, h_mm:30, w_px:240, h_px:240, margin:10, dpi:203 },
-      T40x20_203:  { key:'T40x20_203',  label:'40 × 20 mm (横)',  code:'T40*20',  w_mm:40, h_mm:20, w_px:320, h_px:160, margin:10, dpi:203 },
-      T40x30_203:  { key:'T40x30_203',  label:'40 × 30 mm (横)',  code:'T40*30',  w_mm:40, h_mm:30, w_px:320, h_px:240, margin:10, dpi:203 },
-      T50x30_203:  { key:'T50x30_203',  label:'50 × 30 mm (大横)',code:'T50*30',  w_mm:50, h_mm:30, w_px:384, h_px:240, margin:8,  dpi:203, offset_y_px:4 },
-      T50x80_203:  { key:'T50x80_203',  label:'50 × 80 mm (大)',  code:'T50*80',  w_mm:50, h_mm:80, w_px:384, h_px:640, margin:10, dpi:203 },
+      T40x20_203:  { key:'T40x20_203',  label:'40 × 20 mm（横）',  code:'T40*20',  w_mm:40, h_mm:20, w_px:320, h_px:160, margin:10, dpi:203 },
+      T40x30_203:  { key:'T40x30_203',  label:'40 × 30 mm（横）',  code:'T40*30',  w_mm:40, h_mm:30, w_px:320, h_px:240, margin:10, dpi:203 },
+      T50x30_203:  { key:'T50x30_203',  label:'50 × 30 mm（大横）',code:'T50*30',  w_mm:50, h_mm:30, w_px:384, h_px:240, margin:8,  dpi:203, offset_y_px:4 },
+      T50x80_203:  { key:'T50x80_203',  label:'50 × 80 mm（大）',  code:'T50*80',  w_mm:50, h_mm:80, w_px:384, h_px:640, margin:10, dpi:203 },
       T60x40_203:  { key:'T60x40_203',  label:'60 × 40 mm',       code:'T60*40',  w_mm:60, h_mm:40, w_px:480, h_px:320, margin:10, dpi:203 },
     }
   };
@@ -329,14 +329,14 @@
     if(!LIB){
       transition(STATE.UNSUPPORTED, {
         text:'Niimbot 驱动加载失败',
-        sub:'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot,请检查网络或关闭广告拦截后刷新'
+        sub:'CDN 脚本 niimbot-web-bluetooth 未加载到 window.Niimbot，请检查网络或关闭广告拦截后刷新'
       });
       return false;
     }
     if(!WB || !BT.isSupported()){
       transition(STATE.UNSUPPORTED, {
         text:'浏览器不支持 Web Bluetooth',
-        sub:'请在 Chrome / Edge 桌面或安卓版中打开,并保证地址为 HTTPS 或 localhost(iOS 可尝试 Bluefy 浏览器)'
+        sub:'请在 Chrome / Edge 桌面或安卓版中打开，并保证地址为 HTTPS 或 localhost（iOS 可尝试 Bluefy 浏览器）'
       });
       return false;
     }
@@ -344,7 +344,7 @@
     populateModels();
     populateLabelsForModel(DEFAULT_MODEL);
     transition(STATE.DISCONNECTED, {
-      sub:'先选择型号和标签纸,再点下方按钮配对你的精臣打印机'
+      sub:'先选择型号和标签纸，再点下方按钮配对你的精臣打印机'
     });
     return true;
   }
@@ -356,7 +356,7 @@
     // 进入 connecting:按钮自动 disabled,显示"连接中…"
     transition(STATE.CONNECTING, { text:'连接中…', sub:'请在浏览器弹窗中选择设备' });
     try{
-      showToast('正在弹出设备连接列表...');
+      showToast('正在弹出设备连接列表……');
       // 使用所有已知型号的 name_prefixes 并集,保证任一款 Niimbot 都能在系统列表里被搜到
       const allPrefixes = [...new Set(Object.values(REGISTRY.models).flatMap(m => m.name_prefixes || []))];
       const info = await BT.identify({ ...modelHint, name_prefixes: allPrefixes });
@@ -368,20 +368,20 @@
         populateLabelsForModel(matchedKey);
       }
       const devName = (info && info.deviceName) || 'Niimbot';
-      const extra = matchedKey ? `已自动切换型号:${REGISTRY.models[matchedKey].label}` : `型号 ID:${info.modelId}(未知型号,请手动选择)`;
-      transition(STATE.CONNECTED, { text:`已连接:${devName}`, sub:extra });
-      showToast('连接成功,可以打印');
+      const extra = matchedKey ? `已自动切换型号：${REGISTRY.models[matchedKey].label}` : `型号 ID：${info.modelId}（未知型号，请手动选择）`;
+      transition(STATE.CONNECTED, { text:`已连接：${devName}`, sub:extra });
+      showToast('连接成功，可以打印');
     }catch(err){
       console.error(err);
       const rawMsg = err && err.message ? err.message : '';
       const isCancel = /cancel|取消|aborted|user.*cancel|chooser.*closed/i.test(rawMsg);
       if(isCancel){
         // 用户主动取消 → 完全回到初始未连接状态
-        transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点"连接"' });
+        transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点「连接」' });
         showToast('已取消连接');
       }else{
         // 真实失败:状态点置红,但仍处于 DISCONNECTED(按钮可重试)
-        transition(STATE.DISCONNECTED, { text:'连接失败', sub: rawMsg || '连接失败(可能取消了设备选择)' });
+        transition(STATE.DISCONNECTED, { text:'连接失败', sub: rawMsg || '连接失败（可能取消了设备选择）' });
         showToast(rawMsg || '连接失败', true);
       }
     }
@@ -391,7 +391,7 @@
     transition(STATE.DISCONNECTING, { text:'断开中…' });
     try{ if(BT) await BT.disconnect(); }catch(e){}
     lastIdentifyInfo = null;
-    transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点"连接"' });
+    transition(STATE.DISCONNECTED, { sub:'选择型号和标签纸后点「连接」' });
     showToast('已断开');
   }
 
@@ -461,25 +461,25 @@
     btnPrint.disabled = true;
     try{
       const offsetHint = (offsetX===0 && offsetY===0) ? '' : ` · 偏移 X${offsetX>=0?'+':''}${offsetX} Y${offsetY>=0?'+':''}${offsetY}px`;
-      showToast(`准备打印...(${copies}份 × ${size.label}${offsetHint})`);
+      showToast(`准备打印……（${copies}份 × ${size.label}${offsetHint}）`);
       const printCanvas = renderToPrintSize(size, fit, offsetX, offsetY);
       const pngDataURL = printCanvas.toDataURL('image/png');
       // 真实打印进度:停留在 CONNECTED,只改文案
       const onProgress = (msg) => {
-        const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中...');
+        const text = (typeof msg === 'string') ? msg : (msg && msg.detail ? msg.detail : '打印中……');
         transition(STATE.CONNECTED, { text:'打印中…', sub:text });
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
       transition(STATE.CONNECTED, {
-        text:`打印完成 (${copies}份 × ${size.label})`,
-        sub: lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : ''
+        text:`打印完成（${copies}份 × ${size.label}）`,
+        sub: lastIdentifyInfo ? `设备：${lastIdentifyInfo.deviceName || 'Niimbot'}` : ''
       });
       showToast(`打印完成`);
     }catch(err){
       console.error(err);
       const msg = err && err.message ? err.message : '打印失败';
       transition(STATE.CONNECTED, { text:'打印失败', sub: msg });
-      showToast('打印失败:' + msg, true);
+      showToast('打印失败：' + msg, true);
     }finally{
       btnPrint.disabled = false;
     }
@@ -489,7 +489,7 @@
   selModel.addEventListener('change', () => {
     const cur = selModel.value;
     populateLabelsForModel(cur);
-    showToast(`已切换到 ${REGISTRY.models[cur].label},尺寸列表已更新`);
+    showToast(`已切换到 ${REGISTRY.models[cur].label}，尺寸列表已更新`);
   });
 
   /* ============ 初始化 ============ */
