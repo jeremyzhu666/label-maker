@@ -70,9 +70,13 @@ header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);fo
   border-radius:var(--radius);
   padding:var(--s-5);
 }
-/* 编辑区与预览区等高 */
+/* 编辑区与预览区严格等高:用统一变量,三重保险确保一致 */
+:root{ --editor-height:300px; }
 .col-main > .step:first-child,
-.preview-section{ min-height:300px !important; max-height:300px !important; height:300px !important; display:flex; flex-direction:column; overflow:hidden }
+.preview-section{
+  height:var(--editor-height);
+  display:flex; flex-direction:column; overflow:hidden;
+}
 .col-main > .step:first-child .grid{ flex:1; align-content:center }
 .preview-section .preview-wrap{ flex:1; align-items:center }
 .step-head{

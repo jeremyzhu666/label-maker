@@ -469,23 +469,30 @@
   btnConnect.addEventListener('click', onConnectClick);
   btnPrint.addEventListener('click', onPrint);
 
-  // 份数分段控件
-  const copiesStepper = document.getElementById('copiesStepper');
-  if(copiesStepper){
-    const valEl = document.getElementById('copiesVal');
-    const hidden = document.getElementById('copies');
+  // 通用 stepper 初始化:支持份数(1-99)与偏移(-99~+99)
+  function initStepper(stepperId, valId, hiddenId, min, max){
+    const stepper = document.getElementById(stepperId);
+    if(!stepper) return;
+    const valEl = document.getElementById(valId);
+    const hidden = document.getElementById(hiddenId);
     const setVal = (n) => {
-      n = Math.max(1, Math.min(99, n|0));
-      valEl.textContent = n;
+      n = Math.max(min, Math.min(max, n|0));
+      const display = (n > 0 && min < 0) ? '+' + n : String(n);
+      valEl.textContent = display;
       hidden.value = n;
     };
-    copiesStepper.addEventListener('click', (e) => {
+    stepper.addEventListener('click', (e) => {
       const btn = e.target.closest('.stepper-btn');
       if(!btn) return;
-      const cur = parseInt(hidden.value||'1', 10);
+      const cur = parseInt(hidden.value||'0', 10);
       setVal(btn.dataset.act === 'inc' ? cur + 1 : cur - 1);
     });
+    // 初始化显示(偏移 0 显示为 0,非 +0)
+    setVal(parseInt(hidden.value||'0', 10));
   }
+  initStepper('copiesStepper',  'copiesVal',  'copies',     1, 99);
+  initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', -99, 99);
+  initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', -99, 99);
 
   buildInputs();
   draw();

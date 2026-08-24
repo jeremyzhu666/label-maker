@@ -75,11 +75,21 @@
           </div>
           <div>
             <label>左右偏移</label>
-            <input id="selOffsetX" type="number" min="-99" max="99" step="1" value="0" placeholder="0 · 范围 -99~+99">
+            <div class="stepper" id="offsetXStepper">
+              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <span class="stepper-val" id="offsetXVal">0</span>
+              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+            </div>
+            <input id="selOffsetX" type="hidden" value="0">
           </div>
           <div>
             <label>上下偏移</label>
-            <input id="selOffsetY" type="number" min="-99" max="99" step="1" value="0" placeholder="0 · 范围 -99~+99">
+            <div class="stepper" id="offsetYStepper">
+              <button type="button" class="stepper-btn" data-act="dec" aria-label="减少">−</button>
+              <span class="stepper-val" id="offsetYVal">0</span>
+              <button type="button" class="stepper-btn" data-act="inc" aria-label="增加">+</button>
+            </div>
+            <input id="selOffsetY" type="hidden" value="0">
           </div>
         </div>
         <!-- 型号/尺寸/填充:功能保留,UI 隐藏 -->
