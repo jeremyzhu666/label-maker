@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker 标签生成工具</title>
-<link rel="stylesheet" href="styles.css?v=13">
+<link rel="stylesheet" href="styles.css?v=14">
 <!-- Barlow Condensed 只给 canvas 打印用,异步加载不阻塞首屏 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css" media="print" onload="this.media='all'">
@@ -31,20 +31,20 @@
         </div>
         <div class="grid" id="inputGrid">
           <div class="block-group">
-            <input type="text" class="title-input" data-type="t" data-i="0" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12">
-            <input type="text" data-type="c" data-i="0" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16">
+            <input type="text" class="title-input" data-type="t" data-i="0" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12" value="名称">
+            <input type="text" data-type="c" data-i="0" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16" value="Apple">
           </div>
           <div class="block-group">
-            <input type="text" class="title-input" data-type="t" data-i="1" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12">
-            <input type="text" data-type="c" data-i="1" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16">
+            <input type="text" class="title-input" data-type="t" data-i="1" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12" value="编号">
+            <input type="text" data-type="c" data-i="1" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16" value="A01">
           </div>
           <div class="block-group">
-            <input type="text" class="title-input" data-type="t" data-i="2" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12">
-            <input type="text" data-type="c" data-i="2" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16">
+            <input type="text" class="title-input" data-type="t" data-i="2" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12" value="日期">
+            <input type="text" data-type="c" data-i="2" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16" value="YYMMDD">
           </div>
           <div class="block-group">
-            <input type="text" class="title-input" data-type="t" data-i="3" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12">
-            <input type="text" data-type="c" data-i="3" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16">
+            <input type="text" class="title-input" data-type="t" data-i="3" data-i18n-placeholder="input.titlePlaceholder" placeholder="模板标题" maxlength="12" value="自定义">
+            <input type="text" data-type="c" data-i="3" data-i18n-placeholder="input.placeholder" placeholder="编辑模板" maxlength="16" value="for MacOS">
           </div>
         </div>
       </section>
@@ -68,7 +68,7 @@
       </section>
 
       <!-- 03 打印设置 -->
-      <section class="step" id="printSelects" hidden>
+      <section class="step" id="printSelects">
         <div class="step-head">
           <h2 data-i18n="sections.settings">打印设置</h2>
         </div>

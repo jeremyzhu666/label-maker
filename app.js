@@ -71,9 +71,7 @@
     lang = l;
     S = window.I18N[l];
     applyI18n();
-    // 默认标题/内容随语言切换,重置输入并重绘
-    titles = S.defaults.titles.slice();
-    contents = S.defaults.contents.slice();
+    // 语言切换:只更新 placeholder,保留用户输入值
     fillInputs();
     draw();
     // 状态文案同步刷新
@@ -82,9 +80,9 @@
 
   // placeholder 统一为默认提示
   function smartPlaceholder(){ return S.input.placeholder; }
-  // 无保存功能:每次刷新回到默认状态
-  let titles = S.defaults.titles.slice();
-  let contents = S.defaults.contents.slice();
+  // 无保存功能:每次刷新回到默认状态(值由 HTML value 属性提供)
+  let titles = [];
+  let contents = [];
 
   const grid = document.getElementById('inputGrid');
   const canvas = document.getElementById('canvas');
@@ -109,6 +107,8 @@
     drawScheduled = true;
     requestAnimationFrame(() => { drawScheduled = false; draw(); });
   }
+  // 预分配数组,避免每次 draw 创建 [0,1,2,3]
+  const ALL_CELLS = [0,1,2,3];
   // 收集 HTML 预写的 input 引用 + 绑定事件(只执行一次)
   function bindInputs(){
     const inputs = grid.querySelectorAll('input');
@@ -119,11 +119,11 @@
       contentInputs[i].addEventListener('input', onInput);
     }
   }
-  // 填充值和 placeholder(语言切换时也调用)
+  // 同步 placeholder(语言切换时调用)
   function fillInputs(){
     for(let i=0;i<4;i++){
-      titleInputs[i].value = titles[i];
-      contentInputs[i].value = contents[i];
+      titles[i] = titleInputs[i].value;
+      contents[i] = contentInputs[i].value;
       titleInputs[i].placeholder = S.input.titlePlaceholder;
       contentInputs[i].placeholder = smartPlaceholder();
     }
@@ -148,7 +148,7 @@
   const taskSlots = [{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0}];
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
-    const cells = allDirty ? [0,1,2,3] : [...dirtyCells];
+    const cells = allDirty ? ALL_CELLS : [...dirtyCells];
 
     // 第一批:清白底
     ctx.fillStyle = '#ffffff';
@@ -249,10 +249,19 @@
       ctx.fillText(t, x, y);
     } else {
       // 兜底:bestSize 仍放不下(理论不会到这),截断加省略号
-      while(t.length > 1 && measureAt(t + '…', bestSize, bestFont) > maxW){
-        t = t.slice(0, -1);
+      // 用二分查找截断长度,避免逐字删除的多次 measureText
+      let lo = 1, hi = t.length, bestLen = 0;
+      const ellipsis = '…';
+      while(lo <= hi){
+        const mid = Math.floor((lo + hi) / 2);
+        if(measureAt(t.slice(0, mid) + ellipsis, bestSize, bestFont) <= maxW){
+          bestLen = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
       }
-      ctx.fillText(t + '…', x, y);
+      ctx.fillText(t.slice(0, bestLen) + ellipsis, x, y);
     }
     ctx.font = baseFont;
   }
@@ -363,14 +372,15 @@
     const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
+      printSelects.hidden = true;
       transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedDriver });
       return false;
     }
     if(!WB || !BT.isSupported()){
+      printSelects.hidden = true;
       transition(STATE.UNSUPPORTED, { sub: S.status.unsupportedBT });
       return false;
     }
-    printSelects.hidden = false;   // 连接前允许先选好型号/尺寸(identify 需要 model 提示)
     populateModels();
     populateLabelsForModel(DEFAULT_MODEL);
     transition(STATE.DISCONNECTED, { sub:'' });

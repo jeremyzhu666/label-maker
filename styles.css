@@ -237,7 +237,6 @@ canvas.ready{opacity:1}
 .btn-connect:active{background:var(--border)}
 
 .connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-2)}
-.connect-row .btn-print{flex:0 0 auto}
 
 /* —— Toast —— */
 .toast{
