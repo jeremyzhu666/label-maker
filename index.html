@@ -51,7 +51,9 @@
   .btn-print{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
   .btn-print:active{background:#15803d}
   .btn-reset{flex:0 0 96px;background:#fff;border:1px solid var(--border);color:var(--dim);font-weight:700}
-  .btn-connect{width:100%;height:var(--btn-h);padding:0 18px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:1.3px;text-transform:uppercase;color:#fff;background:var(--accent);transition:.15s;line-height:1.05}
+  .btn-connect{flex:1;height:var(--btn-h);padding:0 18px;border-radius:10px;font-weight:700;font-size:14px;letter-spacing:1.3px;text-transform:uppercase;color:#fff;background:var(--accent);transition:.15s;line-height:1.05}
+  .connect-row{display:flex;gap:10px}
+  .connect-row .btn-print{flex:0 0 auto;padding:0 22px}
   .btn-connect:active{background:var(--accent-2)}
   .print-box{margin-top:12px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
   .print-box.connected{background:#f0fdf4;border-color:#bbf7d0}
@@ -118,7 +120,10 @@
           <div class="status-sub" id="statusSub"></div>
         </div>
       </div>
-      <button class="btn-connect" id="btnConnect" disabled>连接打印机</button>
+      <div class="connect-row">
+        <button class="btn-connect" id="btnConnect" disabled>连接打印机</button>
+        <button class="btn-print" id="printBtn" disabled>立即打印</button>
+      </div>
 
       <div class="select-row" style="margin-top:12px" id="printSelects" hidden>
         <div>
@@ -165,7 +170,6 @@
 
     <div class="actions" style="margin-top:14px">
       <button class="btn-export" id="exportBtn">下载 JPG</button>
-      <button class="btn-print" id="printBtn" disabled>直接打印</button>
       <button class="btn-reset" id="clearBtn">清空 RESET</button>
     </div>
   </section>
