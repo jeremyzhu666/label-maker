@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker 标签生成工具</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/niimbot-web-bluetooth@2.4.0/src/niimbot.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css">
+<script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js"></script>
 <style>
   :root{
     --bg:#f4f6fa; --card:#fff; --border:#e2e6ee; --text:#1a2233;
@@ -156,6 +155,10 @@
           <label>左右偏移 OFFSET X (px · -99~+99)</label>
           <input id="selOffsetX" type="number" min="-99" max="99" step="1" value="0">
         </div>
+        <div>
+          <label>上下偏移 OFFSET Y (px · -99~+99)</label>
+          <input id="selOffsetY" type="number" min="-99" max="99" step="1" value="0">
+        </div>
       </div>
 
     </div>
@@ -167,7 +170,7 @@
     </div>
   </section>
 
-  <footer>v1.1.0 · Supports Niimbot · B1 / B1 Pro / B2 Pro / M2-H / D11_H / D110 / N1 · Web Bluetooth v2.4</footer>
+  <footer>v1.1.0</footer>
   <div class="toast" id="toast"></div>
 
 <script>
@@ -503,7 +506,7 @@
       }
       const devName = (info && info.deviceName) || 'Niimbot';
       const extra = matchedKey ? `已自动切换型号:${REGISTRY.models[matchedKey].label}` : `型号 ID:${info.modelId}(未知型号,请手动选择)`;
-      setStatus('ok', `✅ 已连接:${devName}`, extra);
+      setStatus('ok', `已连接:${devName}`, extra);
       btnConnect.textContent = '断开连接';
       btnConnect.removeEventListener('click', onConnect);
       btnConnect.addEventListener('click', onDisconnect, { once:true });
@@ -535,7 +538,7 @@
   }
 
   /* ---------- 渲染到标签尺寸的新 canvas(含等比缩放 + 左右偏移校准 + 黑白二值化) ---------- */
-  function renderToPrintSize(lbl, fitMode, offsetX){
+  function renderToPrintSize(lbl, fitMode, offsetX, offsetY){
     const pc = document.createElement('canvas');
     pc.width = lbl.w_px;
     pc.height = lbl.h_px;
@@ -560,6 +563,7 @@
     }
     // 左右偏移校准:正值整体右移,负值整体左移
     dx += Number(offsetX) || 0;
+    dy += Number(offsetY) || 0;
     pctx.drawImage(canvas, 0, 0, iw, ih, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
     // 二值化(热敏打印机只有黑点/白点,阈值 210 兼顾浅灰保留与文字锐度)
     try{
@@ -586,13 +590,14 @@
     const copies = Math.max(1, Math.min(99, parseInt(copiesInp.value||'1')));
     const density = Math.max(1, Math.min(5, parseInt(selDensity.value||'3')));
     const offsetX = Math.max(-99, Math.min(99, parseInt(selOffsetX.value||'0')));
+    const offsetY = Math.max(-99, Math.min(99, parseInt(selOffsetY.value||'0')));
 
     btnPrint.disabled = true;
     let progressTimer = null;
     try{
-      const offsetHint = offsetX===0 ? '' : ` · 偏移${offsetX>0?'+':''}${offsetX}px`;
+      const offsetHint = (offsetX===0 && offsetY===0) ? '' : ` · 偏移 X${offsetX>=0?'+':''}${offsetX} Y${offsetY>=0?'+':''}${offsetY}px`;
       showToast(`准备打印...(${copies}份 × ${size.label}${offsetHint})`);
-      const printCanvas = renderToPrintSize(size, fit, offsetX);
+      const printCanvas = renderToPrintSize(size, fit, offsetX, offsetY);
       const pngDataURL = printCanvas.toDataURL('image/png');
       // 真实打印进度
       const onProgress = (msg) => {
@@ -600,8 +605,8 @@
         setStatus('ok', '打印中…', text);
       };
       await BT.printImage(pngDataURL, { model, size, copies, density, onProgress });
-      setStatus('ok', `✅ 打印完成 (${copies}份 × ${size.label})`, lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : '');
-      showToast(`打印完成 ✓`);
+      setStatus('ok', `打印完成 (${copies}份 × ${size.label})`, lastIdentifyInfo ? `设备:${lastIdentifyInfo.deviceName || 'Niimbot'}` : '');
+      showToast(`打印完成`);
     }catch(err){
       console.error(err);
       const msg = err && err.message ? err.message : '打印失败';
