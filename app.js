@@ -81,8 +81,6 @@
     renderStatus();
   }
 
-  // placeholder 统一为默认提示
-  function smartPlaceholder(){ return S.input.placeholder; }
   // 无保存功能:每次刷新回到默认状态(值由 HTML value 属性提供)
   let titles = [];
   let contents = [];
@@ -130,15 +128,13 @@
       titles[i] = titleInputs[i].value;
       contents[i] = contentInputs[i].value;
       titleInputs[i].placeholder = S.input.titlePlaceholder;
-      contentInputs[i].placeholder = smartPlaceholder();
+      // 内容框 placeholder 由 HTML 预设,不随语言切换
     }
   }
   function onInput(e){
     const i = +e.target.dataset.i;
     if(e.target.dataset.type==='t'){
       titles[i] = e.target.value;
-      // 标题变化 → 同步更新同格的第二行 placeholder
-      contentInputs[i].placeholder = smartPlaceholder();
     }
     else{ contents[i] = e.target.value; }
     scheduleDraw(i);
@@ -194,7 +190,7 @@
       const hasContent = ci != null && ci.trim() !== '';
       const mode = hasContent ? 'content' : (official ? 'blank' : 'placeholder');
       taskSlots[j].color = CONTENT_MODE[mode].color;
-      taskSlots[j].text = hasContent ? ci : (mode === 'placeholder' ? smartPlaceholder() : '');
+      taskSlots[j].text = hasContent ? ci : (mode === 'placeholder' ? contentInputs[i].placeholder : '');
       taskSlots[j].x = CELL_X[i];
       taskSlots[j].y = CELL_Y[i];
     }

@@ -35,8 +35,8 @@ window.I18N = {
       increase: '增加'
     },
     status: {
-      unsupportedDriver: 'Niimbot 驱动加载失败,请检查网络或关闭广告拦截后刷新',
-      unsupportedBT: '当前浏览器不支持 Web 蓝牙,iOS 请使用 Bluefy 浏览器',
+      unsupportedDriver: 'Niimbot 驱动加载失败，请检查网络或关闭广告拦截后刷新',
+      unsupportedBT: '当前浏览器不支持 Web 蓝牙，iOS 请使用 Bluefy 浏览器',
       selectDevice: '请在浏览器弹窗中选择设备',
       connected: function(dev, extra){ return '已连接:' + dev + ' · ' + extra; },
       modelSwitched: function(label){ return '已切换型号:' + label; },
@@ -60,7 +60,7 @@ window.I18N = {
       titlePlaceholder: '模板标题'
     },
     defaults: {
-      titles: ['名称','编号','日期','自定义'],
+      titles: ['名称','编号','日期','格式'],
       contents: ['Apple','A01','YYMMDD','for MacOS']
     }
   },
@@ -121,7 +121,7 @@ window.I18N = {
       titlePlaceholder: 'Template title'
     },
     defaults: {
-      titles: ['Name','ID','Date','Custom'],
+      titles: ['Name','ID','Date','Format'],
       contents: ['Apple','A01','YYMMDD','for MacOS']
     }
   }
