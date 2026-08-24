@@ -48,10 +48,10 @@ body{
   letter-spacing:-.01em;
 }
 
-/* —— Header —— */
-header{text-align:center;margin-bottom:var(--s-4);padding:var(--s-2) 0}
-header h1{font-size:var(--text-2xl);font-weight:600;letter-spacing:-.02em}
-header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);font-weight:400}
+/* —— Header:克制,标题不抢内容焦点 —— */
+header{text-align:center;margin-bottom:var(--s-3);padding:var(--s-1) 0}
+header h1{font-size:var(--text-xl);font-weight:600;letter-spacing:-.02em}
+header p{font-size:var(--text-xs);color:var(--text-mute);margin-top:var(--s-1);font-weight:400}
 
 /* —— 双栏布局:桌面左编辑右预览,上边沿严格对齐 —— */
 .layout{
@@ -68,7 +68,7 @@ header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);fo
   background:var(--card);
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:var(--s-5);
+  padding:var(--s-4);
 }
 /* 编辑区与预览区严格等高:用统一变量,三重保险确保一致 */
 :root{ --editor-height:300px; }
@@ -94,16 +94,9 @@ header p{font-size:var(--text-sm);color:var(--text-dim);margin-top:var(--s-1);fo
   margin-left:auto;font-size:var(--text-xs);color:var(--text-mute);
 }
 
-/* —— 标签编辑:四宫格 —— */
+/* —— 标签编辑:四宫格,无内边框,靠 gap 分隔 —— */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3)}
-.block-group{
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:var(--s-3);
-  background:var(--card);
-}
 .block-group input + input{margin-top:var(--s-2)}
-.block-group .title-input{background:var(--bg);border-color:var(--border-strong)}
 
 /* —— 表单元素:统一规格 —— */
 label{
@@ -159,7 +152,6 @@ canvas{
   max-width:210px;
   height:auto;
   border:1px solid var(--border);
-  border-radius:var(--radius);
   background:#fff;
   image-rendering:auto;
 }
@@ -215,8 +207,6 @@ canvas{
   flex:1;text-align:center;
   font-size:var(--text-sm);font-weight:500;
   color:var(--text);
-  border-left:1px solid var(--border);
-  border-right:1px solid var(--border);
   height:100%;
   display:grid;place-items:center;
 }
