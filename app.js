@@ -4,15 +4,33 @@
    ============================================================ */
 (function(){
   'use strict';
-  const W=800, H=600, BW=W/2, BH=H/2;
-  // Condensed 字体 + 正经系统中文字体 fallback(热敏打印笔画不粘连):
-  // - 字号保持 44 / 68;字重再-2级(每档-100,共减200):标题 600→400,内容 500→300
-  //   中文用系统自带 PingFang SC(苹方,Light/Regular 字重精确) + 雅黑/黑体兜底,笔画扎实,不会像 Noto 那样"怪"
-  // - 缩字兜底下限:标题≥22,内容≥34;步长-4
-  const FONT_UI_TITLE   = '400 44px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
-  const FONT_UI_CONTENT = '300 68px "Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif';
-  const STORE_KEY='tpl_titles_v3';
-  const defaultTitles=['名称','编号','日期','自定义'];
+
+  /* ---------- CONFIG:集中所有可调参数 ---------- */
+  const CONFIG = Object.freeze({
+    canvas:  { W:800, H:600 },                 // canvas 画布尺寸(打印头方向 W,走纸方向 H)
+    font: {                                     // 字体规格:Barlow Condensed + 系统中文 fallback(热敏打印笔画不粘连)
+      titleSize:44, titleWeight:400,            //   标题:字号 44,字重 400
+      contentSize:68, contentWeight:300,        //   内容:字号 68,字重 300
+      minTitle:22, minContent:34,                //   缩字兜底下限:标题≥22,内容≥34(用二分查找最大能放下的字号)
+      family:'"Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif'
+    },
+    layout: {                                   // canvas 内部布局
+      padX:34,                                   //   标题左右内边距
+      titleY:72,                                 //   标题基线 y(距块顶部)
+      contentY:180,                              //   内容基线 y(块中心偏下)
+      titleMaxPadX:68,                           //   标题最大宽度 padding(左右各 34)
+      contentMaxPadX:58                          //   内容最大宽度 padding
+    },
+    binarize: { threshold:210 },                // 二值化阈值(热敏打印:0.299R+0.587G+0.114B < 210 → 黑)
+    storage: { key:'tpl_titles_v3' },           // localStorage 键名
+    defaults: { titles:['名称','编号','日期','自定义'] }
+  });
+
+  const W=CONFIG.canvas.W, H=CONFIG.canvas.H, BW=W/2, BH=H/2;
+  const FONT_UI_TITLE   = CONFIG.font.titleWeight   + ' ' + CONFIG.font.titleSize   + 'px ' + CONFIG.font.family;
+  const FONT_UI_CONTENT = CONFIG.font.contentWeight + ' ' + CONFIG.font.contentSize + 'px ' + CONFIG.font.family;
+  const STORE_KEY = CONFIG.storage.key;
+  const defaultTitles = CONFIG.defaults.titles;
   // 根据第一行模板项智能生成第二行 placeholder
   function smartPlaceholder(title){
     const t = (title||'').trim();
@@ -83,13 +101,13 @@
       const col = i%2, row = Math.floor(i/2);
       const x = col*BW, y = row*BH;
       // 第二行(内容)在整块中完全居中:块高 BH=300 → 正中心 y+150 (textBaseline=middle,所以 y 就是中心)
-      // 第一行(标题)置于上方,距块顶部 72px,与第二行中心保持 78px 间距,视觉不挤
-      // 标题文本:左右内边距 34px
+      // 第一行(标题)置于上方,距块顶部 CONFIG.layout.titleY,与第二行中心保持 78px 间距,视觉不挤
+      // 标题文本:左右内边距 CONFIG.layout.padX
       ctx.fillStyle='#000000';
       ctx.font = FONT_UI_TITLE;
       ctx.textBaseline='middle'; ctx.textAlign='left';
-      drawTextClip(titles[i]||'', x+34, y+72, BW-68, true);
-      // 内容区:中心 y+150 (整块正中心),左右内边距 29px
+      drawTextClip(titles[i]||'', x+CONFIG.layout.padX, y+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
+      // 内容区:中心 y+CONFIG.layout.contentY (整块正中心),左右内边距 (BW-CONFIG.layout.contentMaxPadX)/2
       // 预览(official=false)空内容画灰色占位提示;正式导出/打印(official=true)时空内容留白,不要把提示字打出来
       const hasContent = !!String(contents[i]||'').trim();
       let contentText = '';
@@ -105,7 +123,7 @@
       }
       ctx.font = FONT_UI_CONTENT;
       ctx.textAlign='center';
-      drawTextClip(contentText||'', x+BW/2, y+180, BW-58, false);
+      drawTextClip(contentText||'', x+BW/2, y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
     }
   }
   function drawTextClip(text, x, y, maxW, isTitle){
@@ -116,8 +134,8 @@
     const m = baseFont.match(/^(\d+)\s*px/);
     if(m){
       const origSize = +m[1];
-      const minSize = isTitle ? 22 : 34;
-      // 二分查找最大能放下的字号(O(log n) 替代原线性步长-4 的 O(n))
+      const minSize = isTitle ? CONFIG.font.minTitle : CONFIG.font.minContent;
+      // 二分查找最大能放下的字号(O(log n))
       let lo = minSize, hi = origSize, bestSize = minSize;
       while(lo <= hi){
         const mid = Math.floor((lo + hi) / 2);
@@ -384,13 +402,14 @@
     dx += Number(offsetX) || 0;
     dy += Number(offsetY) || 0;
     pctx.drawImage(canvas, 0, 0, iw, ih, Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
-    // 二值化(热敏打印机只有黑点/白点,阈值 210 兼顾浅灰保留与文字锐度)
+    // 二值化(热敏打印机只有黑点/白点,阈值 CONFIG.binarize.threshold 兼顾浅灰保留与文字锐度)
     try{
       const img = pctx.getImageData(0, 0, pc.width, pc.height);
       const d = img.data;
+      const thr = CONFIG.binarize.threshold;
       for(let i=0; i<d.length; i+=4){
         const l = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-        if(l < 210){ d[i]=d[i+1]=d[i+2]=0; } else { d[i]=d[i+1]=d[i+2]=255; }
+        if(l < thr){ d[i]=d[i+1]=d[i+2]=0; } else { d[i]=d[i+1]=d[i+2]=255; }
         d[i+3] = 255;
       }
       pctx.putImageData(img, 0, 0);
