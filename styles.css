@@ -128,14 +128,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 select{cursor:pointer}
 .title-input{font-weight:500}
 
-/* —— 预览区:右侧 sticky,品牌色左条点缀 —— */
+/* —— 预览区:右侧 sticky —— */
 .preview-section{position:relative}
-.preview-section::before{
-  content:'';
-  position:absolute;left:0;top:0;bottom:0;
-  width:2px;background:var(--brand);
-  border-radius:var(--radius) 0 0 var(--radius);
-}
 .preview-wrap{display:flex;justify-content:center;padding:var(--s-4) 0}
 canvas{
   width:100%;
