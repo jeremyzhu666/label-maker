@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker 标签生成工具</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css">
 <link rel="stylesheet" href="styles.css">
+<!-- Barlow Condensed 只给 canvas 打印用,异步加载不阻塞首屏 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/300.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/barlow-condensed/400.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <header>
@@ -104,9 +105,8 @@
 
   <div class="toast" id="toast"></div>
 
-<!-- niimbot-web-bluetooth 必须在 app.js 之前加载(app.js 依赖 window.Niimbot) -->
-<script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js"></script>
-<!-- defer 保证 DOM 解析完成后才执行 app.js,且按顺序在 niimbot.js 之后 -->
+<!-- niimbot.js + app.js 都加 defer:DOM 解析后按顺序执行,niimbot 先加载 app.js 再跑 -->
+<script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>

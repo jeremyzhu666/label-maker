@@ -43,6 +43,13 @@
   const toastEl = document.getElementById('toast');
 
   /* ============ 输入 & 绘制 ============ */
+  // rAF 防抖:连续输入时合并到下一帧重绘,避免每次按键都重画 canvas
+  let drawScheduled = false;
+  function scheduleDraw(){
+    if(drawScheduled) return;
+    drawScheduled = true;
+    requestAnimationFrame(() => { drawScheduled = false; draw(); });
+  }
   function buildInputs(){
     grid.innerHTML = '';
     for(let i=0;i<4;i++){
@@ -67,7 +74,7 @@
       if(peer){ peer.placeholder = smartPlaceholder(titles[i]); }
     }
     else{ contents[i] = e.target.value; }
-    draw();
+    scheduleDraw();
   }
   function draw(official){
     ctx.fillStyle='#ffffff';
@@ -104,21 +111,29 @@
   function drawTextClip(text, x, y, maxW, isTitle){
     let t=String(text);
     if(!t){ return; }
-    let w = ctx.measureText(t).width;
-    if(w<=maxW){ ctx.fillText(t, x, y); return; }
+    if(ctx.measureText(t).width <= maxW){ ctx.fillText(t, x, y); return; }
     const baseFont = ctx.font;
     const m = baseFont.match(/^(\d+)\s*px/);
     if(m){
-      let size = +m[1];
-      // 兜底下限随 +20% 同步抬升,再配合字重变细,打印时不会先缩成小字再糊
+      const origSize = +m[1];
       const minSize = isTitle ? 22 : 34;
-      // 步长-4(字号大了,收敛更快)
-      while(size > minSize && ctx.measureText(t).width > maxW){
-        size -= 4;
-        ctx.font = baseFont.replace(/\d+\s*px/, size+'px');
+      // 二分查找最大能放下的字号(O(log n) 替代原线性步长-4 的 O(n))
+      let lo = minSize, hi = origSize, bestSize = minSize;
+      while(lo <= hi){
+        const mid = Math.floor((lo + hi) / 2);
+        ctx.font = baseFont.replace(/\d+\s*px/, mid+'px');
+        if(ctx.measureText(t).width <= maxW){
+          bestSize = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
       }
-      if(ctx.measureText(t).width <= maxW){ ctx.fillText(t, x, y); }
-      else {
+      // 用找到的最大字号,若仍放不下则截断加省略号
+      ctx.font = baseFont.replace(/\d+\s*px/, bestSize+'px');
+      if(ctx.measureText(t).width <= maxW){
+        ctx.fillText(t, x, y);
+      } else {
         while(t.length > 1 && ctx.measureText(t+'…').width > maxW){ t = t.slice(0, -1); }
         ctx.fillText(t+'…', x, y);
       }
@@ -272,6 +287,7 @@
   const DEFAULT_MODEL = 'b1pro';
 
   /* ---------- 型号 / 尺寸 下拉菜单 ---------- */
+  let lastPopulatedModelKey = null;   // populateLabelsForModel 缓存,避免相同型号重复重建
   function populateModels(){
     selModel.innerHTML = '';
     Object.entries(REGISTRY.models).forEach(([k, m]) => {
@@ -283,6 +299,9 @@
     selModel.value = DEFAULT_MODEL;
   }
   function populateLabelsForModel(modelKey){
+    // 缓存:相同型号不重复重建 option 列表
+    if(lastPopulatedModelKey === modelKey && selLabel.children.length > 0) return;
+    lastPopulatedModelKey = modelKey;
     const m = REGISTRY.models[modelKey];
     const dpi = m ? m.dpi : 300;
     selLabel.innerHTML = '';
@@ -482,24 +501,29 @@
   buildInputs();
   draw();
   // Google Fonts 异步加载完成后重绘一次 canvas(否则第一次用 fallback 画出的字体会没有 condensed 效果)
+  // 字体加载成功 → 重绘;失败 → 2 秒后兜底重绘(替代原无条件 setTimeout)
   if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-    document.fonts.ready.then(() => { draw(); }).catch(()=>{});
+    document.fonts.ready.then(() => { draw(); }).catch(() => {
+      setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
+    });
+  } else {
+    // 不支持 document.fonts 的老环境,2 秒后兜底重绘
+    setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
   }
-  // 兼容老环境的兜底:2 秒后再画一次(给 CDN 充足时间)
-  setTimeout(()=>{ try{ draw(); }catch(e){} }, 2000);
 
   // 等待 niimbot.js 加载完成后再检测
-  let checkTimes = 0;
-  function checkReady(){
-    checkTimes++;
+  // defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
+  function waitForNiimbot(){
     if(typeof window.Niimbot !== 'undefined' && typeof window.Niimbot.isSupported === 'function'){
       detectSupport();
-    } else if(checkTimes < 12){
-      setTimeout(checkReady, 500);
+      return;
+    }
+    // CDN 失败兜底:等 load 事件后再试一次,仍不存在则给出失败状态
+    if(document.readyState === 'complete'){
+      detectSupport();
     } else {
-      detectSupport();  // 12 次都没等到,给出失败状态
+      window.addEventListener('load', () => detectSupport(), { once: true });
     }
   }
-  if(document.readyState === 'complete'){ checkReady(); }
-  else{ window.addEventListener('load', checkReady); }
+  waitForNiimbot();
 })();
