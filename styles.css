@@ -235,19 +235,19 @@ canvas.ready{opacity:1}
 
 .btn-print{
   background:var(--text);color:#fff;border-color:var(--text);
-  flex:0 0 150px;padding:0 var(--s-4);
+  padding:0 var(--s-4);
 }
 .btn-print:hover{background:#000;border-color:#000}
 
 .btn-connect{
-  flex:1;background:var(--card);color:var(--text);
+  background:var(--card);color:var(--text);
   border-color:var(--text-dim);
   display:flex;align-items:center;justify-content:center;gap:var(--s-2);
 }
 .btn-connect:hover{background:var(--bg);border-color:var(--text)}
 .btn-connect:active{background:var(--border)}
 
-.connect-row{display:flex;gap:var(--s-2);margin-bottom:var(--s-2)}
+.connect-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);margin-bottom:var(--s-2)}
 
 /* —— Toast —— */
 .toast{

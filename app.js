@@ -165,6 +165,9 @@
   };
   // 预分配 4 个静态槽位,避免每次 draw 重建数组
   const taskSlots = [{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0}];
+  // 中文优先渲染模式:Barlow 未加载时只渲染含中文的文字(用 PingFang SC fallback),
+  // 纯英文文字留空,等 Barlow 加载完再渲染(避免英文用 PingFang SC 闪烁)
+  let chineseOnlyMode = false;
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
     let cells, cellCount;
@@ -197,7 +200,8 @@
     ctx.textAlign = 'left';
     for(let j=0;j<cellCount;j++){
       const i = cells[j];
-      drawTextClip(titles[i]||'', CELL_X[i]+PAD_X, CELL_Y[i]+TITLE_Y, TITLE_MAXW, true);
+      const _t = titles[i]||'';
+      drawTextClip(_t, CELL_X[i]+PAD_X, CELL_Y[i]+TITLE_Y, TITLE_MAXW, true, chineseOnlyMode && !/[\u4e00-\u9fa5]/.test(_t));
     }
 
     // 第三批:内容(按颜色分组,减少 fillStyle 切换)
@@ -219,7 +223,7 @@
     for(let j=0;j<cellCount;j++){
       const t = taskSlots[j];
       if(t.color !== lastColor){ ctx.fillStyle = t.color; lastColor = t.color; }
-      if(t.text) drawTextClip(t.text, t.x+CONTENT_CX, t.y+CONTENT_Y, CONTENT_MAXW, false);
+      if(t.text) drawTextClip(t.text, t.x+CONTENT_CX, t.y+CONTENT_Y, CONTENT_MAXW, false, chineseOnlyMode && !/[\u4e00-\u9fa5]/.test(t.text));
     }
 
     dirtyCells.clear();
@@ -251,8 +255,8 @@
     measureCount++;
     return w;
   }
-  function drawTextClip(text, x, y, maxW, isTitle){
-    if(!text){ return; }
+  function drawTextClip(text, x, y, maxW, isTitle, skip){
+    if(skip || !text){ return; }
     const t = typeof text === 'string' ? text : String(text);
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
@@ -597,24 +601,33 @@
     initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
     initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
   }
-  // Barlow Condensed 异步加载:加载完才显示 canvas,避免用户看到 fallback 字体闪烁
+  // Barlow Condensed 异步加载:canvas 白底+中文立即随页面显示,英文留空等 Barlow 加载完再渲染
   function waitForFonts(){
-    const show = () => { draw(); canvas.classList.add('ready'); };
-    // 快速路径:字体可能已被浏览器缓存,check 返回 true 则立即渲染
+    canvas.classList.add('ready');  // 立即显示 canvas(白底),与页面同步渲染
+    // 第一阶段:中文优先渲染(Barlow 不含中文,浏览器 fallback PingFang SC),
+    // 纯英文文字留空,避免英文先用 PingFang SC 渲染再切 Barlow 闪烁
+    chineseOnlyMode = true;
+    try{ draw(); }catch(e){}
+    // 第二阶段:Barlow 加载完,渲染所有内容(英文用 Barlow)
+    const renderAll = () => { chineseOnlyMode = false; try{ draw(); }catch(e){} };
+    // 轮询 fonts.check:Barlow 用 <link media=print onload> 异步生效,
+    // document.fonts.ready 可能在 @font-face 生效前过早 resolve,故用轮询
     if(document.fonts && document.fonts.check){
-      if(document.fonts.check('400 44px "Barlow Condensed"') &&
-         document.fonts.check('300 68px "Barlow Condensed"')){
-        show();
-        return;
-      }
-    }
-    if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
-      document.fonts.ready.then(show).catch(() => {
-        setTimeout(()=>{ try{ show(); }catch(e){} }, 2000);
-      });
+      let tries = 0;
+      const poll = () => {
+        if(document.fonts.check('400 44px "Barlow Condensed"') &&
+           document.fonts.check('300 68px "Barlow Condensed"')){
+          renderAll();
+        } else if(++tries < 60){  // 最多 3 秒(50ms×60)
+          setTimeout(poll, 50);
+        } else {
+          renderAll();  // 超时兜底,用 fallback
+        }
+      };
+      poll();
     } else {
       // 不支持 document.fonts 的老环境,2 秒后兜底
-      setTimeout(()=>{ try{ show(); }catch(e){} }, 2000);
+      setTimeout(renderAll, 2000);
     }
   }
   // 蓝牙支持检测:defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
