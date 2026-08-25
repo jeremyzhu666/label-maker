@@ -80,9 +80,9 @@ window.I18N = {
     buttons: {
       connect: 'Connect Printer',
       disconnect: 'Disconnect',
-      connecting: 'Connecting…',
-      disconnecting: 'Disconnecting…',
-      printing: 'Printing…',
+      connecting: 'Connecting...',
+      disconnecting: 'Disconnecting...',
+      printing: 'Printing...',
       print: 'Print Now'
     },
     settings: {
@@ -99,18 +99,18 @@ window.I18N = {
       unsupportedDriver: 'Niimbot driver failed to load, check network or disable ad blocker and refresh',
       unsupportedBT: 'Current browser does not support Web Bluetooth, iOS please use Bluefy, MacOS please use Chrome',
       selectDevice: 'Select a device in the browser popup',
-      connected: function(dev, extra){ return 'Connected: ' + dev + ' · ' + extra; },
+      connected: function(dev, extra){ return 'Connected: ' + dev + ' - ' + extra; },
       modelSwitched: function(label){ return 'Model switched: ' + label; },
       modelUnknown: function(id){ return 'Model ID: ' + id + ' (unknown)'; },
       connectFailed: function(msg){ return msg ? 'Connect failed: ' + msg : 'Connect failed'; }
     },
     toast: {
-      connecting: 'Opening device picker…',
+      connecting: 'Opening device picker...',
       connected: 'Connected, ready to print',
       cancelled: 'Cancelled',
       connectFailed: 'Connection failed',
       disconnected: 'Disconnected',
-      printing: function(copies, label, offset){ return 'Printing… (' + copies + ' × ' + label + offset + ')'; },
+      printing: function(copies, label, offset){ return 'Printing... (' + copies + ' x ' + label + offset + ')'; },
       printed: 'Done',
       printFailed: function(msg){ return 'Print failed: ' + msg; },
       noDriver: 'Niimbot driver not loaded',

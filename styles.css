@@ -279,6 +279,7 @@ canvas.ready{opacity:1}
   .col-main > .step:nth-child(3){order:3}   /* 设置区 */
   .grid{grid-template-columns:1fr}
   .select-row{grid-template-columns:1fr}
+  .connect-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
   .btn{height:var(--control-h-m);font-size:var(--text-sm)}
   input[type=text]{height:var(--control-h-m)}
