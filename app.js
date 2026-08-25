@@ -166,9 +166,9 @@
   };
   // 预分配 4 个静态槽位,避免每次 draw 重建数组
   const taskSlots = [{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0},{color:null,text:null,x:0,y:0}];
-  // 中文优先渲染模式:Barlow 未加载时只渲染含中文的文字(用 PingFang SC fallback),
-  // 纯英文文字留空,等 Barlow 加载完再渲染(避免英文用 PingFang SC 闪烁)
-  let chineseOnlyMode = false;
+  // 英文就绪标志:Barlow 未加载时纯英文文字 skip(空白),加载完用 Barlow
+  // 中文文字(含中文)始终用 PingFang SC,随页面立即渲染
+  let englishReady = false;
   function draw(official){
     const allDirty = dirtyCells.size === 0 || dirtyCells.size >= 4 || official === true;
     let cells, cellCount;
@@ -202,7 +202,8 @@
     for(let j=0;j<cellCount;j++){
       const i = cells[j];
       const _t = titles[i]||'';
-      drawTextClip(_t, CELL_X[i]+PAD_X, CELL_Y[i]+TITLE_Y, TITLE_MAXW, true, chineseOnlyMode && !/[\u4e00-\u9fa5]/.test(_t));
+      // 纯英文且 Barlow 未加载时 skip(空白),含中文始终渲染(用 PingFang SC)
+      drawTextClip(_t, CELL_X[i]+PAD_X, CELL_Y[i]+TITLE_Y, TITLE_MAXW, true, !englishReady && !/[\u4e00-\u9fa5]/.test(_t));
     }
 
     // 第三批:内容(按颜色分组,减少 fillStyle 切换)
@@ -224,7 +225,7 @@
     for(let j=0;j<cellCount;j++){
       const t = taskSlots[j];
       if(t.color !== lastColor){ ctx.fillStyle = t.color; lastColor = t.color; }
-      if(t.text) drawTextClip(t.text, t.x+CONTENT_CX, t.y+CONTENT_Y, CONTENT_MAXW, false, chineseOnlyMode && !/[\u4e00-\u9fa5]/.test(t.text));
+      if(t.text) drawTextClip(t.text, t.x+CONTENT_CX, t.y+CONTENT_Y, CONTENT_MAXW, false, !englishReady && !/[\u4e00-\u9fa5]/.test(t.text));
     }
 
     dirtyCells.clear();
@@ -604,35 +605,44 @@
     initStepper('offsetXStepper', 'offsetXVal', 'selOffsetX', CONFIG.stepper.offsetX);
     initStepper('offsetYStepper', 'offsetYVal', 'selOffsetY', CONFIG.stepper.offsetY);
   }
-  // Barlow Condensed 异步加载:canvas 白底+中文立即随页面显示,英文留空等 Barlow 加载完再渲染
+  // Barlow Condensed 异步加载:canvas 白底+中文立即随页面显示,英文留空等 Barlow 加载完
   function waitForFonts(){
     canvas.classList.add('ready');  // 立即显示 canvas(白底),与页面同步渲染
-    // 第一阶段:中文优先渲染(Barlow 不含中文,浏览器 fallback PingFang SC),
-    // 纯英文文字留空,避免英文先用 PingFang SC 渲染再切 Barlow 闪烁
-    chineseOnlyMode = true;
+    // 第一阶段:中文(含 PingFang SC fallback)立即渲染,纯英文 skip(空白)
+    englishReady = false;
     try{ draw(); }catch(e){}
     // 第二阶段:Barlow 加载完,渲染所有内容(英文用 Barlow)
     let done = false;
-    const renderAll = () => { if(done) return; done = true; chineseOnlyMode = false; try{ draw(); }catch(e){} };
-    if(document.fonts && document.fonts.load && document.fonts.check){
-      // 双重确认:fonts.load Promise resolve(字体文件下载完) + fonts.check=true(@font-face 生效)
-      // fonts.load 在 @font-face 未生效时立即 resolve 空,此时 fonts.check=false,继续轮询
+    const renderAll = () => { if(done) return; done = true; englishReady = true; try{ draw(); }catch(e){} };
+    if(document.fonts && document.fonts.load){
+      // 检查 Barlow Condensed 的 latin subset(300/400 weight)是否加载完
+      // FontFace.status:unloaded → loading → loaded(下载完)/error(失败)
+      // fontsource 每个 weight 有多个 subset(latin/latin-ext/cyrillic),只加载 latin subset 即可
+      // 比 fonts.check 更可靠:fonts.check 可能提前 true(@font-face 生效但文件未下载完)
+      const isBarlowReady = () => {
+        let loaded = 0;
+        for(const face of document.fonts){
+          if(face.family === 'Barlow Condensed' && face.status === 'loaded'){
+            loaded++;
+          }
+        }
+        return loaded >= 2;  // 300/400 latin subset 加载完
+      };
       const poll = () => {
         Promise.all([
           document.fonts.load('400 44px "Barlow Condensed"'),
           document.fonts.load('300 68px "Barlow Condensed"')
         ]).then(() => {
-          if(document.fonts.check('400 44px "Barlow Condensed"') &&
-             document.fonts.check('300 68px "Barlow Condensed"')){
+          if(isBarlowReady()){
             renderAll();
           } else {
-            setTimeout(poll, 50);  // @font-face 未生效,继续轮询触发下载
+            setTimeout(poll, 50);  // 继续轮询直到 FontFace status=loaded
           }
         });
       };
       poll();
     } else {
-      // 不支持 document.fonts 的老环境,3 秒后兜底(老浏览器无 Barlow 概念)
+      // 不支持 document.fonts 的老环境,3 秒后兜底
       setTimeout(renderAll, 3000);
     }
   }
