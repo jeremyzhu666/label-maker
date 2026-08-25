@@ -8,11 +8,12 @@
   /* ---------- CONFIG:集中所有可调参数 ---------- */
   const CONFIG = Object.freeze({
     canvas:  { W:800, H:600 },                 // canvas 画布尺寸(打印头方向 W,走纸方向 H)
-    font: {                                     // 字体规格:Barlow Condensed + 系统中文 fallback(热敏打印笔画不粘连)
+    font: {                                     // 字体规格:英文用 Barlow Condensed,中文用 PingFang SC(热敏打印笔画不粘连)
       titleSize:44, titleWeight:400,            //   标题:字号 44,字重 400
       contentSize:68, contentWeight:300,        //   内容:字号 68,字重 300
       minTitle:22, minContent:34,                //   缩字兜底下限:标题≥22,内容≥34(用二分查找最大能放下的字号)
-      family:'"Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif'
+      family:'"Barlow Condensed",sans-serif',   //   英文:只用 Barlow,不 fallback PingFang SC(用户要求写死 Barlow)
+      familyCJK:'"PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif'  //   中文:Barlow 不含中文,用 PingFang SC
     },
     layout: {                                   // canvas 内部布局
       padX:34,                                   //   标题左右内边距
@@ -46,11 +47,11 @@
   const TITLE_MAXW = BW - CONFIG.layout.titleMaxPadX;
   const CONTENT_MAXW = BW - CONFIG.layout.contentMaxPadX;
   const CONTENT_CX = BW / 2;
-  // fontOf 全局缓存:同一 weight+size 只拼接一次字符串,后续命中缓存
+  // fontOf 全局缓存:同一 weight+size+isCJK 只拼接一次字符串,后续命中缓存
   const _fontCache = Object.create(null);
-  function fontOf(weight, size){
-    const k = weight + '|' + size;
-    return _fontCache[k] || (_fontCache[k] = weight + ' ' + size + 'px ' + CONFIG.font.family);
+  function fontOf(weight, size, isCJK){
+    const k = weight + '|' + size + '|' + (isCJK ? '1' : '0');
+    return _fontCache[k] || (_fontCache[k] = weight + ' ' + size + 'px ' + (isCJK ? CONFIG.font.familyCJK : CONFIG.font.family));
   }
   const FONT_UI_TITLE   = fontOf(CONFIG.font.titleWeight,   CONFIG.font.titleSize);
   const FONT_UI_CONTENT = fontOf(CONFIG.font.contentWeight, CONFIG.font.contentSize);
@@ -258,9 +259,10 @@
   function drawTextClip(text, x, y, maxW, isTitle, skip){
     if(skip || !text){ return; }
     const t = typeof text === 'string' ? text : String(text);
+    const isCJK = /[\u4e00-\u9fa5]/.test(t);  // 含中文用 PingFang SC,纯英文用 Barlow(不 fallback PingFang SC)
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
-    const origFont = fontOf(weight, origSize);
+    const origFont = fontOf(weight, origSize, isCJK);
     const baseFont = ctx.font;
     // 快速路径:原字号能放下,直接画
     if(measureAt(t, origSize, origFont) <= maxW){
@@ -274,7 +276,7 @@
     let lo = minSize, hi = origSize, bestSize = minSize;
     while(lo <= hi){
       const mid = Math.floor((lo + hi) / 2);
-      if(measureAt(t, mid, fontOf(weight, mid)) <= maxW){
+      if(measureAt(t, mid, fontOf(weight, mid, isCJK)) <= maxW){
         bestSize = mid;
         lo = mid + 1;
       } else {
@@ -282,7 +284,7 @@
       }
     }
     // bestSize 是二分已验证能放下的最大字号,直接画即可(无需再测)
-    const bestFont = fontOf(weight, bestSize);
+    const bestFont = fontOf(weight, bestSize, isCJK);
     ctx.font = bestFont;
     if(bestSize > minSize || measureAt(t, bestSize, bestFont) <= maxW){
       ctx.fillText(t, x, y);
