@@ -143,10 +143,10 @@
     <p>酷卡创新 2026</p>
   </footer>
 
-<!-- niimbot.js + i18n.js + registry.js + app.js 都加 defer:DOM 解析后按顺序执行 -->
-<script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js" defer></script>
+<!-- niimbot.js async 不阻塞 app.js(打印功能用,用户点击时已加载);i18n/registry/app.js defer 按顺序执行 -->
+<script src="https://cdn.jsdelivr.net/npm/niimbot-web-bluetooth@2.4.0/src/niimbot.js" async></script>
 <script src="i18n.js?v=4" defer></script>
 <script src="registry.js?v=2" defer></script>
-<script src="app.js?v=11" defer></script>
+<script src="app.js?v=12" defer></script>
 </body>
 </html>

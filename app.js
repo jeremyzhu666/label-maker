@@ -611,16 +611,14 @@
     // 第二阶段:Barlow 加载完,渲染所有内容(英文用 Barlow)
     let done = false;
     const renderAll = () => { if(done) return; done = true; chineseOnlyMode = false; try{ draw(); }catch(e){} };
-    // 主动加载 Barlow(触发 @font-face 字体文件下载),加载完即渲染;
-    // 移动端 CDN 慢时 fonts.load 会一直等待直到加载完或失败,避免轮询超时用 fallback
+    // 主动触发 Barlow 字体下载(fonts.load 在 @font-face 生效后触发下载,未生效时无副作用);
+    // 不依赖其 Promise resolve(@font-face 未生效时会立即 resolve 空,误判加载完)
     if(document.fonts && document.fonts.load){
-      Promise.all([
-        document.fonts.load('400 44px "Barlow Condensed"'),
-        document.fonts.load('300 68px "Barlow Condensed"')
-      ]).then(renderAll).catch(renderAll);
+      document.fonts.load('400 44px "Barlow Condensed"');
+      document.fonts.load('300 68px "Barlow Condensed"');
     }
-    // 轮询 fonts.check 兜底:@font-face 异步生效后 check 返回 true 即渲染;
-    // 超时 10 秒(移动端 CDN 慢),避免 3 秒太短导致 fallback
+    // 轮询 fonts.check 确认 Barlow 真正加载完(@font-face 生效 + 字体文件下载完)再渲染;
+    // 超时 10 秒(移动端 CDN 慢兜底),稳定可靠
     if(document.fonts && document.fonts.check){
       let tries = 0;
       const poll = () => {
@@ -634,12 +632,12 @@
         }
       };
       poll();
-    } else if(!document.fonts || !document.fonts.load){
+    } else {
       // 不支持 document.fonts 的老环境,2 秒后兜底
       setTimeout(renderAll, 2000);
     }
   }
-  // 蓝牙支持检测:defer 已保证 app.js 在 niimbot.js 之后执行,但 CDN 可能失败,兜底等 load 事件
+  // 蓝牙支持检测:niimbot.js 是 async,app.js 执行时可能未加载完,兜底等 load 事件
   function detectBluetoothSupport(){
     if(typeof window.Niimbot !== 'undefined' && typeof window.Niimbot.isSupported === 'function'){
       detectSupport();
