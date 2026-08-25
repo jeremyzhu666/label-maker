@@ -132,6 +132,7 @@ label{
 }
 input[type=text]{
   width:100%;
+  height:var(--control-h);
   padding:8px 12px;
   border:1px solid var(--border-strong);
   border-radius:var(--radius);
@@ -155,7 +156,7 @@ canvas{
   width:100%;
   max-width:var(--canvas-max-w);
   height:auto;
-  border:1px solid var(--border);
+  border:1px solid var(--border-strong);
   border-radius:var(--radius);
   background:#fff;
   image-rendering:auto;
@@ -229,6 +230,7 @@ canvas.ready{opacity:1}
   background:var(--card);
   color:var(--text);
   touch-action:manipulation;
+  display:flex;align-items:center;justify-content:center;
 }
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn:active{background:var(--bg)}
@@ -241,7 +243,7 @@ canvas.ready{opacity:1}
 
 .btn-connect{
   background:var(--card);color:var(--text);
-  border-color:var(--text-dim);
+  border-color:var(--border-strong);
   display:flex;align-items:center;justify-content:center;gap:var(--s-2);
 }
 .btn-connect:hover{background:var(--bg);border-color:var(--text)}
@@ -279,6 +281,8 @@ canvas.ready{opacity:1}
   .select-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
   .btn{height:var(--control-h-m);font-size:var(--text-sm)}
+  input[type=text]{height:var(--control-h-m)}
+  .stepper{height:var(--control-h-m)}
   /* 移动端解除固定高度和 flex 布局,与打印区/设置区一致 */
   .col-main > .step:first-child,
   .preview-section{height:auto;min-height:auto;display:block;overflow:visible}

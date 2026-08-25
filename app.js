@@ -614,16 +614,13 @@
     // 第二阶段:Barlow 加载完,渲染所有内容(英文用 Barlow)
     let done = false;
     const renderAll = () => { if(done) return; done = true; chineseOnlyMode = false; try{ draw(); }catch(e){} };
-    // 主动触发 Barlow 字体下载(fonts.load 在 @font-face 生效后触发下载,未生效时无副作用);
-    // 不依赖其 Promise resolve(@font-face 未生效时会立即 resolve 空,误判加载完)
-    if(document.fonts && document.fonts.load){
-      document.fonts.load('400 44px "Barlow Condensed"');
-      document.fonts.load('300 68px "Barlow Condensed"');
-    }
-    // 轮询 fonts.check 确认 Barlow 真正加载完(@font-face 生效 + 字体文件下载完)再渲染;
-    // 不用 fallback 兜底(用户要求"慢一点没事但是要对"),永远等 Barlow 加载完
-    if(document.fonts && document.fonts.check){
+    if(document.fonts && document.fonts.load && document.fonts.check){
       const poll = () => {
+        // 每次触发 Barlow 下载(@font-face 生效后触发下载,未生效时无副作用);
+        // fonts.load 在 @font-face 未生效时立即 resolve 空,不触发下载,所以需轮询重复调用
+        document.fonts.load('400 44px "Barlow Condensed"');
+        document.fonts.load('300 68px "Barlow Condensed"');
+        // fonts.check 确认 @font-face 生效 + 字体文件下载完(@font-face 未生效或下载未完时返回 false)
         if(document.fonts.check('400 44px "Barlow Condensed"') &&
            document.fonts.check('300 68px "Barlow Condensed"')){
           renderAll();
