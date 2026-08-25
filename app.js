@@ -92,6 +92,7 @@
   let titles = [];
   let contents = [];
 
+  /* ---------- DOM 引用:全部集中,按 UI 区域分组 ---------- */
   const grid = document.getElementById('inputGrid');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
@@ -99,6 +100,17 @@
   // input 引用数组:HTML 预写结构,init 时收集引用
   const titleInputs = [];
   const contentInputs = [];
+  // 蓝牙/打印区
+  const statusDot = document.getElementById('statusDot');
+  const btnLabel = document.getElementById('btnLabel');
+  const statusSub = document.getElementById('statusSub');
+  const btnConnect = document.getElementById('btnConnect');
+  const btnPrint = document.getElementById('printBtn');
+  const selModel = document.getElementById('selModel');
+  const selLabel = document.getElementById('selLabel');
+  const selFit = document.getElementById('selFit');
+  const selDensity = document.getElementById('selDensity');
+  const printSelects = document.getElementById('printSelects');
 
   /* ============ 输入 & 绘制 ============ */
   // rAF 防抖:连续输入时合并到下一帧重绘,避免每次按键都重画 canvas
@@ -295,18 +307,6 @@
     toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2500);
   }
 
-  // --- 蓝牙状态 ---
-  const statusDot = document.getElementById('statusDot');
-  const btnLabel = document.getElementById('btnLabel');
-  const statusSub = document.getElementById('statusSub');
-  const btnConnect = document.getElementById('btnConnect');
-  const btnPrint = document.getElementById('printBtn');
-  const selModel = document.getElementById('selModel');
-  const selLabel = document.getElementById('selLabel');
-  const selFit = document.getElementById('selFit');
-  const selDensity = document.getElementById('selDensity');
-  const printSelects = document.getElementById('printSelects');
-
   const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
 
   /* ---------- 状态机 ----------
@@ -381,9 +381,8 @@
       o.textContent = `${s.label}  ${orient} (${s.w_px}×${s.h_px}px)`;
       selLabel.appendChild(o);
     });
-    // 默认选一个"最常用"的中间尺寸
-    const defaultPick = list.find(([k]) => k.includes('40x30')) || list.find(([k]) => k.includes('50x30')) || list[0];
-    selLabel.value = defaultPick[0];
+    // 默认尺寸:优先用 model.defaultSize 字段,兜底取第一个
+    selLabel.value = (m && m.defaultSize && byDpi && byDpi[m.defaultSize]) ? m.defaultSize : list[0][0];
   }
   function getCurrentModel(){ return REGISTRY.models[selModel.value]; }
   function getCurrentLabel(){ return REGISTRY.sizes[selLabel.value]; }

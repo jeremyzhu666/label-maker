@@ -5,13 +5,13 @@
    ============================================================ */
 window.REGISTRY = {
   models: {
-    b1pro: { key:'b1pro', label:'B1 Pro',       id:4097, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B1'] },
-    b2pro: { key:'b2pro', label:'B2 Pro',       id:6912, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B2'] },
-    b1:    { key:'b1',    label:'B1 (203 dpi)', id:4096, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['B1'] },
-    d11h:  { key:'d11h',  label:'D11_H',        id:528,  dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['D11'] },
-    m2h:   { key:'m2h',   label:'M2-H',         id:4608, dpi:300, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['M2'] },
-    d110:  { key:'d110',  label:'D110',          id:2304, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['D110'] },
-    n1:    { key:'n1',    label:'N1',           id:3586, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['N1'] },
+    b1pro: { key:'b1pro', label:'B1 Pro',       id:4097, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B1'],  defaultSize:'T40x30_300' },
+    b2pro: { key:'b2pro', label:'B2 Pro',       id:6912, dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['B2'],  defaultSize:'T40x30_300' },
+    b1:    { key:'b1',    label:'B1 (203 dpi)', id:4096, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['B1'],  defaultSize:'T40x30_203' },
+    d11h:  { key:'d11h',  label:'D11_H',        id:528,  dpi:300, protocol:'v4', task:'v4',   density:3, label_type:1, speed:1, name_prefixes:['D11'], defaultSize:'T40x30_300' },
+    m2h:   { key:'m2h',   label:'M2-H',         id:4608, dpi:300, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['M2'],  defaultSize:'T40x30_300' },
+    d110:  { key:'d110',  label:'D110',          id:2304, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['D110'], defaultSize:'T40x30_203' },
+    n1:    { key:'n1',    label:'N1',           id:3586, dpi:203, protocol:'v4', task:'b1',   density:3, label_type:1, speed:1, name_prefixes:['N1'],  defaultSize:'T40x30_203' },
   },
   /* size.key 格式: T{W}x{H}[_modelSuffix]。
      w_px = 打印头方向(横向),h_px = 走纸方向(纵向)。

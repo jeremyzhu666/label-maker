@@ -26,6 +26,14 @@
   /* —— 圆角:4px 微圆角(专业冷静)—— */
   --radius:4px;
 
+  /* —— 控件尺寸:统一来源,一处改全局生效 —— */
+  --control-h:40px;        /* 输入框/按钮/stepper 统一高度 */
+  --stepper-btn-w:36px;    /* stepper 加减按钮宽度 */
+  --stepper-font:18px;     /* stepper 加减号字号 */
+  --aside-w:360px;         /* 桌面右栏宽度 */
+  --canvas-max-w:210px;    /* 预览 canvas 最大宽度 */
+  --control-h-m:38px;      /* 移动端控件高度 */
+
   /* —— 编辑区与预览区等高 —— */
   --editor-height:250px;
 
@@ -79,7 +87,7 @@ footer p{font-size:var(--text-xs);color:var(--text-mute);font-weight:400}
 /* —— 双栏布局:桌面左编辑右预览,上边沿严格对齐 —— */
 .layout{
   display:grid;
-  grid-template-columns:1fr 360px;
+  grid-template-columns:1fr var(--aside-w);
   gap:var(--s-6);
   align-items:stretch;
 }
@@ -146,7 +154,7 @@ input[type=text]:focus{
 .preview-wrap{display:flex;justify-content:center;padding:var(--s-4) 0}
 canvas{
   width:100%;
-  max-width:210px;
+  max-width:var(--canvas-max-w);
   height:auto;
   border:1px solid var(--border);
   border-radius:var(--radius);
@@ -182,15 +190,15 @@ canvas.ready{opacity:1}
   display:flex;align-items:center;
   border:1px solid var(--border-strong);
   border-radius:var(--radius);
-  height:40px;
+  height:var(--control-h);
   overflow:hidden;
   background:var(--card);
 }
 .stepper-btn{
-  width:36px;height:100%;
+  width:var(--stepper-btn-w);height:100%;
   border:none;border-radius:0;
   background:var(--card);color:var(--text-dim);
-  font-size:18px;font-weight:400;
+  font-size:var(--stepper-font);font-weight:400;
   cursor:pointer;flex-shrink:0;
   display:grid;place-items:center;
   touch-action:manipulation;
@@ -208,7 +216,7 @@ canvas.ready{opacity:1}
 /* —— 按钮:首字母大写,字距正常,扁平无阴影 —— */
 .btn{
   flex:1;
-  height:40px;
+  height:var(--control-h);
   padding:0 var(--s-4);
   border:1px solid var(--border-strong);
   border-radius:var(--radius);
@@ -270,7 +278,7 @@ canvas.ready{opacity:1}
   .grid{grid-template-columns:1fr}
   .select-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
-  .btn{height:38px;font-size:var(--text-sm)}
+  .btn{height:var(--control-h-m);font-size:var(--text-sm)}
   /* 移动端解除固定高度,自适应内容 */
   .col-main > .step:first-child,
   .preview-section{height:auto;min-height:auto}
