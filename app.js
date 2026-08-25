@@ -12,7 +12,7 @@
       titleSize:44, titleWeight:400,            //   标题:字号 44,字重 400
       contentSize:68, contentWeight:300,        //   内容:字号 68,字重 300
       minTitle:22, minContent:34,                //   缩字兜底下限:标题≥22,内容≥34(用二分查找最大能放下的字号)
-      family:'"Barlow Condensed",sans-serif',   //   英文:只用 Barlow,不 fallback PingFang SC(用户要求写死 Barlow)
+      family:'"Barlow Condensed","PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif',  //   英文:Barlow 优先,未加载时 fallback PingFang SC(通过 chineseOnlyMode 避免渲染)
       familyCJK:'"PingFang SC","Hiragino Sans GB","Microsoft YaHei","SimHei",sans-serif'  //   中文:Barlow 不含中文,用 PingFang SC
     },
     layout: {                                   // canvas 内部布局
@@ -615,18 +615,20 @@
     let done = false;
     const renderAll = () => { if(done) return; done = true; chineseOnlyMode = false; try{ draw(); }catch(e){} };
     if(document.fonts && document.fonts.load && document.fonts.check){
+      // 双重确认:fonts.load Promise resolve(字体文件下载完) + fonts.check=true(@font-face 生效)
+      // fonts.load 在 @font-face 未生效时立即 resolve 空,此时 fonts.check=false,继续轮询
       const poll = () => {
-        // 每次触发 Barlow 下载(@font-face 生效后触发下载,未生效时无副作用);
-        // fonts.load 在 @font-face 未生效时立即 resolve 空,不触发下载,所以需轮询重复调用
-        document.fonts.load('400 44px "Barlow Condensed"');
-        document.fonts.load('300 68px "Barlow Condensed"');
-        // fonts.check 确认 @font-face 生效 + 字体文件下载完(@font-face 未生效或下载未完时返回 false)
-        if(document.fonts.check('400 44px "Barlow Condensed"') &&
-           document.fonts.check('300 68px "Barlow Condensed"')){
-          renderAll();
-        } else {
-          setTimeout(poll, 50);  // 持续轮询直到加载完
-        }
+        Promise.all([
+          document.fonts.load('400 44px "Barlow Condensed"'),
+          document.fonts.load('300 68px "Barlow Condensed"')
+        ]).then(() => {
+          if(document.fonts.check('400 44px "Barlow Condensed"') &&
+             document.fonts.check('300 68px "Barlow Condensed"')){
+            renderAll();
+          } else {
+            setTimeout(poll, 50);  // @font-face 未生效,继续轮询触发下载
+          }
+        });
       };
       poll();
     } else {
