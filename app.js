@@ -313,7 +313,7 @@
     toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2500);
   }
 
-  const BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API)
+  let BT = window.Niimbot;   // niimbot-web-bluetooth 全局对象(v2.4:静态方法 API);let 因 niimbot.js async 可能未加载完,各处使用前重新读取
 
   /* ---------- 状态机 ----------
      单一状态源,所有 UI 由 transition() 集中同步,业务层只读写 state。
@@ -395,6 +395,7 @@
 
   /* ---------- 支持检测 ---------- */
   function detectSupport(){
+    BT = window.Niimbot;  // 重新读取,niimbot.js async 在 app.js 执行时可能未加载完,此时(detectBluetoothSupport 兜底等 load 事件后调用)已加载
     const WB = navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
     const LIB = typeof BT !== 'undefined' && BT && typeof BT.isSupported === 'function';
     if(!LIB){
@@ -618,23 +619,20 @@
       document.fonts.load('300 68px "Barlow Condensed"');
     }
     // 轮询 fonts.check 确认 Barlow 真正加载完(@font-face 生效 + 字体文件下载完)再渲染;
-    // 超时 10 秒(移动端 CDN 慢兜底),稳定可靠
+    // 不用 fallback 兜底(用户要求"慢一点没事但是要对"),永远等 Barlow 加载完
     if(document.fonts && document.fonts.check){
-      let tries = 0;
       const poll = () => {
         if(document.fonts.check('400 44px "Barlow Condensed"') &&
            document.fonts.check('300 68px "Barlow Condensed"')){
           renderAll();
-        } else if(++tries < 200){  // 最多 10 秒(50ms×200)
-          setTimeout(poll, 50);
         } else {
-          renderAll();  // 超时兜底,用 fallback
+          setTimeout(poll, 50);  // 持续轮询直到加载完
         }
       };
       poll();
     } else {
-      // 不支持 document.fonts 的老环境,2 秒后兜底
-      setTimeout(renderAll, 2000);
+      // 不支持 document.fonts 的老环境,3 秒后兜底(老浏览器无 Barlow 概念)
+      setTimeout(renderAll, 3000);
     }
   }
   // 蓝牙支持检测:niimbot.js 是 async,app.js 执行时可能未加载完,兜底等 load 事件
