@@ -26,7 +26,7 @@ window.I18N = {
     },
     settings: {
       density: '打印浓度',
-      copies: '份数',
+      copies: '打印份数',
       offsetX: '左右偏移',
       offsetY: '上下偏移'
     },
