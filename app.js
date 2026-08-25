@@ -609,23 +609,32 @@
     chineseOnlyMode = true;
     try{ draw(); }catch(e){}
     // 第二阶段:Barlow 加载完,渲染所有内容(英文用 Barlow)
-    const renderAll = () => { chineseOnlyMode = false; try{ draw(); }catch(e){} };
-    // 轮询 fonts.check:Barlow 用 <link media=print onload> 异步生效,
-    // document.fonts.ready 可能在 @font-face 生效前过早 resolve,故用轮询
+    let done = false;
+    const renderAll = () => { if(done) return; done = true; chineseOnlyMode = false; try{ draw(); }catch(e){} };
+    // 主动加载 Barlow(触发 @font-face 字体文件下载),加载完即渲染;
+    // 移动端 CDN 慢时 fonts.load 会一直等待直到加载完或失败,避免轮询超时用 fallback
+    if(document.fonts && document.fonts.load){
+      Promise.all([
+        document.fonts.load('400 44px "Barlow Condensed"'),
+        document.fonts.load('300 68px "Barlow Condensed"')
+      ]).then(renderAll).catch(renderAll);
+    }
+    // 轮询 fonts.check 兜底:@font-face 异步生效后 check 返回 true 即渲染;
+    // 超时 10 秒(移动端 CDN 慢),避免 3 秒太短导致 fallback
     if(document.fonts && document.fonts.check){
       let tries = 0;
       const poll = () => {
         if(document.fonts.check('400 44px "Barlow Condensed"') &&
            document.fonts.check('300 68px "Barlow Condensed"')){
           renderAll();
-        } else if(++tries < 60){  // 最多 3 秒(50ms×60)
+        } else if(++tries < 200){  // 最多 10 秒(50ms×200)
           setTimeout(poll, 50);
         } else {
           renderAll();  // 超时兜底,用 fallback
         }
       };
       poll();
-    } else {
+    } else if(!document.fonts || !document.fonts.load){
       // 不支持 document.fonts 的老环境,2 秒后兜底
       setTimeout(renderAll, 2000);
     }
