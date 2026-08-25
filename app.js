@@ -177,6 +177,8 @@
       cells = DIRTY_BUF;
     }
 
+    // 渲染顺序:由整到细 —— 白底框架 → 标题结构 → 内容细节
+
     // 第一批:清白底
     ctx.fillStyle = '#ffffff';
     if(allDirty){
@@ -598,6 +600,14 @@
   // Barlow Condensed 异步加载:加载完才显示 canvas,避免用户看到 fallback 字体闪烁
   function waitForFonts(){
     const show = () => { draw(); canvas.classList.add('ready'); };
+    // 快速路径:字体可能已被浏览器缓存,check 返回 true 则立即渲染
+    if(document.fonts && document.fonts.check){
+      if(document.fonts.check('400 44px "Barlow Condensed"') &&
+         document.fonts.check('300 68px "Barlow Condensed"')){
+        show();
+        return;
+      }
+    }
     if(document.fonts && typeof document.fonts.ready !== 'undefined' && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
       document.fonts.ready.then(show).catch(() => {
         setTimeout(()=>{ try{ show(); }catch(e){} }, 2000);
