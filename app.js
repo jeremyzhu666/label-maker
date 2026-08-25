@@ -39,6 +39,13 @@
   // 预计算每格坐标,避免 draw 内重复 (i%2)*BW / Math.floor(i/2)*BH
   const CELL_X = [0, BW, 0, BW];
   const CELL_Y = [0, 0, BH, BH];
+  // 预计算布局常量,避免 draw 内每格重复 CONFIG.layout.xxx 属性查找 + 加减
+  const PAD_X = CONFIG.layout.padX;
+  const TITLE_Y = CONFIG.layout.titleY;
+  const CONTENT_Y = CONFIG.layout.contentY;
+  const TITLE_MAXW = BW - CONFIG.layout.titleMaxPadX;
+  const CONTENT_MAXW = BW - CONFIG.layout.contentMaxPadX;
+  const CONTENT_CX = BW / 2;
   // fontOf 全局缓存:同一 weight+size 只拼接一次字符串,后续命中缓存
   const _fontCache = Object.create(null);
   function fontOf(weight, size){
@@ -176,7 +183,7 @@
     ctx.textAlign = 'left';
     for(let j=0;j<cellCount;j++){
       const i = cells[j];
-      drawTextClip(titles[i]||'', CELL_X[i]+CONFIG.layout.padX, CELL_Y[i]+CONFIG.layout.titleY, BW-CONFIG.layout.titleMaxPadX, true);
+      drawTextClip(titles[i]||'', CELL_X[i]+PAD_X, CELL_Y[i]+TITLE_Y, TITLE_MAXW, true);
     }
 
     // 第三批:内容(按颜色分组,减少 fillStyle 切换)
@@ -198,7 +205,7 @@
     for(let j=0;j<cellCount;j++){
       const t = taskSlots[j];
       if(t.color !== lastColor){ ctx.fillStyle = t.color; lastColor = t.color; }
-      if(t.text) drawTextClip(t.text, t.x+BW/2, t.y+CONFIG.layout.contentY, BW-CONFIG.layout.contentMaxPadX, false);
+      if(t.text) drawTextClip(t.text, t.x+CONTENT_CX, t.y+CONTENT_Y, CONTENT_MAXW, false);
     }
 
     dirtyCells.clear();
@@ -231,8 +238,8 @@
     return w;
   }
   function drawTextClip(text, x, y, maxW, isTitle){
-    let t=String(text);
-    if(!t){ return; }
+    if(!text){ return; }
+    const t = typeof text === 'string' ? text : String(text);
     const origSize = isTitle ? CONFIG.font.titleSize : CONFIG.font.contentSize;
     const weight   = isTitle ? CONFIG.font.titleWeight : CONFIG.font.contentWeight;
     const origFont = fontOf(weight, origSize);
