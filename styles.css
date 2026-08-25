@@ -167,6 +167,7 @@ canvas.ready{opacity:1}
 
 /* —— 打印区:状态点集成进按钮 —— */
 .print-box{ margin-top:0; padding:0; border:none; background:transparent; border-radius:0; }
+/* 打印区内容继承 .step 的 padding,与其他区域一致 */
 .status-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--text-mute);flex-shrink:0;
@@ -272,14 +273,14 @@ canvas.ready{opacity:1}
   .col-main{display:contents}
   .col-aside{display:contents;position:static}
   .col-main > .step:nth-child(1){order:0}   /* 编辑区 */
-  .preview-section{order:1}                    /* 预览区 */
+  .preview-section{order:1}                 /* 预览区 */
   .col-main > .step:nth-child(2){order:2}   /* 打印区 */
   .col-main > .step:nth-child(3){order:3}   /* 设置区 */
   .grid{grid-template-columns:1fr}
   .select-row{grid-template-columns:1fr}
   header h1{font-size:var(--text-xl)}
   .btn{height:var(--control-h-m);font-size:var(--text-sm)}
-  /* 移动端解除固定高度,自适应内容 */
+  /* 移动端解除固定高度和 flex 布局,与打印区/设置区一致 */
   .col-main > .step:first-child,
-  .preview-section{height:auto;min-height:auto}
+  .preview-section{height:auto;min-height:auto;display:block;overflow:visible}
 }

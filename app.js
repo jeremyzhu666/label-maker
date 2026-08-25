@@ -224,7 +224,7 @@
   }
   // measureText 缓存:两级对象,避免每次 t+'|'+size 字符串拼接
   // measureCache[size][text] = width,命中时零拼接开销
-  const measureCache = Object.create(null);
+  let measureCache = Object.create(null);
   let measureCount = 0;
   function measureAt(t, size, font){
     let bySize = measureCache[size];
@@ -234,9 +234,9 @@
     } else {
       bySize = measureCache[size] = Object.create(null);
     }
-    // 超过 2000 条清空,防止无限增长
+    // 超过 2000 条整体重建,避免逐 key delete 的 O(n) 开销
     if(measureCount > 2000){
-      for(const k in measureCache){ delete measureCache[k]; }
+      measureCache = Object.create(null);
       measureCount = 0;
       bySize = measureCache[size] = Object.create(null);
     }
@@ -258,9 +258,9 @@
     const baseFont = ctx.font;
     // 快速路径:原字号能放下,直接画
     if(measureAt(t, origSize, origFont) <= maxW){
-      ctx.font = origFont;
+      if(origFont !== baseFont) ctx.font = origFont;
       ctx.fillText(t, x, y);
-      ctx.font = baseFont;
+      if(origFont !== baseFont) ctx.font = baseFont;
       return;
     }
     const minSize  = isTitle ? CONFIG.font.minTitle   : CONFIG.font.minContent;
